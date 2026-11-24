@@ -62,7 +62,7 @@ export default async function Applications({ searchParams }: { searchParams: Pro
   return (
     <div>
       <PageHeader title="Applications" subtitle="Nothing is submitted without your approval." />
-      <ListControls action="/applications" params={{ ...sp, sort: sortKey }} keep={["tab"]} placeholder="Search applications by role or employer…" count={rows.length}
+      <ListControls action="/applications" params={{ ...sp, sort: sortKey }} keep={["tab"]} placeholder="Search applications by role or employer…" count={rows.length} total={term ? counts.rows.reduce((n, x) => n + x.n, 0) : cur[2].reduce((n, s) => n + (c[s] ?? 0), 0)}
         sorts={[["smart", "Smart: closing soonest, then best"], ["verdict", "Recommendation (✅ first)"], ["match", "Best match"], ["match_asc", "Lowest match"],
           ["deadline", "Deadline: soonest"], ["deadline_desc", "Deadline: latest"], ["new", "Newest prepared"], ["old", "Oldest prepared"], ["updated", "Recently updated"],
           ["employer", "Employer A–Z"], ["title", "Job title A–Z"]]}

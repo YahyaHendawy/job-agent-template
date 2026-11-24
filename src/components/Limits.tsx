@@ -17,7 +17,7 @@ export async function LimitsNote({ topic, max = 3 }: { topic: LimitTopic; max?: 
       <ul className="space-y-1">
         {list.map((l) => <li key={l.id}><span className="mr-1">{l.icon}</span><b>{l.title}.</b> <span className="text-muted">{l.instead}</span></li>)}
       </ul>
-      <Link href="/limits" className="text-accent font-semibold inline-block">Everything I can't do →</Link>
+      <span className="flex gap-3"><Link href="/todo" className="text-accent font-semibold inline-block">Your part: checklist →</Link><Link href="/limits" className="text-accent font-semibold inline-block">Everything I can't do →</Link></span>
     </aside>
   );
 }

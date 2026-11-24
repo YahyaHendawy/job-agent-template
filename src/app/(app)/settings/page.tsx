@@ -100,7 +100,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
       <section id="sources" data-settings-item className="card p-4 scroll-mt-4">
         <h2 className="font-bold mb-3">{`Job sources (${sources.rows.filter((s) => s.enabled).length} active)`}</h2>
-        <ListControls action="/settings#sources" params={sp} placeholder="Search job sources…" count={srcRows.length}
+        <ListControls action="/settings#sources" params={sp} placeholder="Search job sources…" count={srcRows.length} total={sources.rows.length}
           sorts={[["type", "Type"], ["name", "Name A–Z"], ["listings", "Most listings"], ["checked", "Recently checked"], ["problems", "Problems first"]]}
           filters={[
             { name: "kind", label: "Type", options: [["board", "Employer job pages"], ["reed", "Reed searches"], ["jooble", "Jooble searches"], ["careerjet", "Careerjet"], ["adzuna", "Adzuna (paid, off)"]] },

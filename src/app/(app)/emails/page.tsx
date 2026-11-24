@@ -27,16 +27,18 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
     sender: "lower(coalesce(e.from_name, e.from_address)) asc", category: "e.category asc, e.received_at desc",
   };
   const r = await pool.query(
-    `select e.id, e.category, e.subject, e.from_name, e.from_address, e.received_at, e.needs_action, e.handled_at, e.snippet, j.employer, j.title
+    `select e.id, e.category, e.subject, e.from_name, e.from_address, e.received_at, e.needs_action, e.handled_at, e.snippet, j.employer, j.title, count(*) over()::int as n_all
      from emails e left join applications a on a.id = e.application_id left join jobs j on j.id = a.job_id
      where ${where.join(" and ")} order by ${ORDER[sp.sort ?? "todo"] ?? ORDER.todo} limit 300`, args);
+  const matched = r.rows[0]?.n_all ?? 0;
+  const total = (await pool.query(`select count(*)::int n from emails`)).rows[0].n;
   const todo = r.rows.filter((e) => e.needs_action && !e.handled_at).length;
 
   return (
     <div>
       <PageHeader title="Emails" subtitle={`Your job inbox${todo ? ` · ${todo} need you` : ""}`} />
       <div className="mb-3"><LimitsNote topic="emails" max={1} /></div>
-      <ListControls action="/emails" params={sp} placeholder="Search sender, subject, employer…" count={r.rowCount ?? 0}
+      <ListControls action="/emails" params={sp} placeholder="Search sender, subject, employer…" count={matched} total={total} shown={r.rowCount ?? 0}
         sorts={[["todo", "Needs you first"], ["new", "Newest"], ["old", "Oldest"], ["sender", "Sender A–Z"], ["category", "Type"]]}
         filters={[
           { name: "category", label: "Type", options: Object.entries(CAT) },

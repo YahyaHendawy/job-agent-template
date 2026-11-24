@@ -8,11 +8,13 @@ export type FilterDef = { name: string; label: string; options: Opt[]; all?: str
  * One search + sort + filter bar used on every list. It's a plain GET form (works offline from a saved
  * page and with the back button); choosing an option applies it instantly. Active filters show as chips.
  */
-export function ListControls({ action, params, placeholder, sorts, filters, count, keep = [] }: {
+export function ListControls({ action, params, placeholder, sorts, filters, count, total, shown, keep = [] }: {
   action: string; params: Record<string, string | undefined>; placeholder: string;
-  sorts: Opt[]; filters: FilterDef[]; count?: number; keep?: string[];
+  /** count = how many match the search + filters; total = how many there are with no filters; shown = rows listed (if capped) */
+  sorts: Opt[]; filters: FilterDef[]; count?: number; total?: number; shown?: number; keep?: string[];
 }) {
   const active = filters.filter((f) => params[f.name]);
+  const narrowed = active.length > 0 || !!params.q;
   const [open, setOpen] = useState(false);
   const submit = (e: React.ChangeEvent<HTMLSelectElement>) => e.currentTarget.form?.requestSubmit();
   const hrefWithout = (name: string) => {
@@ -51,8 +53,19 @@ export function ListControls({ action, params, placeholder, sorts, filters, coun
             ⚙︎ Filters{active.length ? ` · ${active.length}` : ""}
           </button>
         )}
-        {typeof count === "number" && <span className="text-sm text-muted ml-auto tabular-nums">{count} result{count === 1 ? "" : "s"}</span>}
+        {typeof count === "number" && !narrowed && <span className="text-sm text-muted ml-auto tabular-nums"><b style={{ color: "var(--ink)" }}>{count}</b> {count === 1 ? "result" : "results"}</span>}
       </div>
+      {typeof count === "number" && narrowed && (
+        <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm" role="status" aria-live="polite"
+          style={{ background: "color-mix(in srgb, var(--accent) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 35%, transparent)" }}>
+          <span className="hud-label !tracking-[.15em]" style={{ color: "var(--accent)" }}>Results</span>
+          <span className="tabular-nums"><b className="text-lg">{count}</b>{typeof total === "number" && total >= count ? <span className="text-muted"> of {total}</span> : null} {count === 1 ? "matches" : "match"}{params.q ? <> “{params.q}”</> : null}{active.length ? ` with ${active.length} filter${active.length > 1 ? "s" : ""}` : ""}</span>
+          {count === 0 && <a href={clearAll} className="ml-auto text-accent font-semibold">Clear</a>}
+        </div>
+      )}
+      {typeof count === "number" && typeof shown === "number" && shown < count && (
+        <p className="text-xs text-muted">Showing the first {shown} of {count}. Add a filter or search to narrow it down.</p>
+      )}
       {/* filters stay in the form even when folded, so their values are kept on every change */}
       <div className={open ? "card p-3 grid grid-cols-2 lg:grid-cols-3 gap-2" : "hidden"}>
         {filters.map((f) => (

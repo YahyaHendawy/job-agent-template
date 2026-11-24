@@ -41,12 +41,14 @@ export default async function Jobs({ searchParams }: { searchParams: SP }) {
   };
   const order = ORDER[sp.sort ?? "score"] ?? ORDER.score;
   const r = await pool.query(
-    `select j.id, j.title, j.employer, j.location, j.country, j.category, j.match_score, j.eligibility, j.deadline, j.salary, j.discovered_at, j.last_verified_at, j.listing_status, j.starred
+    `select j.id, j.title, j.employer, j.location, j.country, j.category, j.match_score, j.eligibility, j.deadline, j.salary, j.discovered_at, j.last_verified_at, j.listing_status, j.starred, count(*) over()::int as n_all
      from jobs j left join sources s on s.id = j.source_id where ${where.join(" and ")} order by ${order} limit 500`, args);
+  const matched = r.rows[0]?.n_all ?? 0;
+  const total = (await pool.query(`select count(*)::int n from jobs where not dismissed and listing_status = 'open' and eligibility <> 'ineligible'`)).rows[0].n;
 
   return (
     <div>
-      <PageHeader title="Jobs" subtitle={`${r.rowCount} opportunities${r.rowCount === 500 ? " (top 500)" : ""}`} right={<Link href="/jobs/new" className="btn btn-primary !text-sm">+ Add by link</Link>} />
+      <PageHeader title="Jobs" subtitle={`${matched} opportunities${matched > 500 ? " (top 500 listed)" : ""}`} right={<Link href="/jobs/new" className="btn btn-primary !text-sm">+ Add by link</Link>} />
       <section className="card p-3 mb-3">
         <div className="flex h-3 rounded-full overflow-hidden">
           {(["eligible", "potentially_eligible", "manual_verification", "ineligible"] as const).map((k) => {
@@ -61,7 +63,7 @@ export default async function Jobs({ searchParams }: { searchParams: SP }) {
         </div>
       </section>
       <div className="mb-3"><LimitsNote topic="jobs" max={2} /></div>
-      <ListControls action="/jobs" params={sp} placeholder="Search title, employer, location" count={r.rowCount ?? 0}
+      <ListControls action="/jobs" params={sp} placeholder="Search title, employer, location" count={matched} total={total} shown={r.rowCount ?? 0}
         sorts={[["score", "Best match"], ["score_asc", "Lowest match"], ["new", "Newest found"], ["old", "Oldest found"], ["deadline", "Deadline: soonest"],
           ["deadline_desc", "Deadline: latest"], ["employer", "Employer A–Z"], ["title", "Job title A–Z"], ["verified", "Recently verified"], ["country", "Country"]]}
         filters={[

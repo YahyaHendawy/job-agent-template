@@ -24,7 +24,9 @@ export default async function Activity({ searchParams }: { searchParams: Promise
   if (sp.importance) add(`importance = any(?)`, sp.importance === "urgent" ? ["urgent"] : ["important", "urgent"]);
   if (sp.notified === "yes") where.push(`exists (select 1 from push_deliveries d where d.event_id = events.id and d.status = 'sent')`);
   const order = sp.sort === "old" ? "id asc" : "id desc";
-  const r = await pool.query(`select id, ts, type, level, title, body, url, simulated from events where ${where.join(" and ")} order by ${order} limit 300`, args);
+  const r = await pool.query(`select id, ts, type, level, title, body, url, simulated, count(*) over()::int as n_all from events where ${where.join(" and ")} order by ${order} limit 300`, args);
+  const matched = r.rows[0]?.n_all ?? 0;
+  const total = (await pool.query(`select count(*)::int n from events`)).rows[0].n;
   const filtered = Object.keys(sp).some((k) => k !== "q" && !(k === "sort" && sp.sort === "new"));
   const days = (await pool.query(`select to_char(d, 'DD Mon') label, coalesce(n, 0)::int value from generate_series(current_date - 13, current_date, interval '1 day') d
      left join (select date_trunc('day', ts)::date as dd, count(*) n from events group by 1) x on x.dd = d::date order by d`)).rows;
@@ -38,7 +40,7 @@ export default async function Activity({ searchParams }: { searchParams: Promise
         <Progress label="Successful actions this week" right={`${lv.ok} of ${lv.t}`} value={lv.ok} max={lv.t} color="var(--good)" />
         <Progress label="Errors this week" right={`${lv.err}`} value={lv.err} max={Math.max(lv.t, 1)} color="var(--bad)" height={6} />
       </section>
-      <ListControls action="/activity" params={sp} placeholder="Search activity (employer, role, “interview”…)" count={r.rowCount ?? 0}
+      <ListControls action="/activity" params={sp} placeholder="Search activity (employer, role, “interview”…)" count={matched} total={total} shown={r.rowCount ?? 0}
         sorts={[["new", "Newest first"], ["old", "Oldest first"]]}
         filters={[
           { name: "kind", label: "About", options: [["needs", "Things that need you"], ["applications", "Applications"], ["employers", "Employer replies"], ["searching", "Searching"], ["system", "System & errors"]] },

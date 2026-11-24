@@ -335,7 +335,8 @@ export async function setInterviewTime(appId: string, f: FormData) {
   await requireUser();
   const when = String(f.get("when") ?? "");
   const where = String(f.get("where") ?? "").slice(0, 300);
-  await pool.query(`update applications set notes = $2, updated_at = now() where id = $1`, [appId, JSON.stringify({ interviewAt: when, interviewWhere: where })]);
+  const { setNote } = await import("@/lib/goahead");
+  await setNote(appId, { interviewAt: when, interviewWhere: where }); // merge: keeps the decision and other notes
   revalidatePath(`/applications/${appId}`);
 }
 
@@ -344,4 +345,73 @@ export async function setWeeklyGoal(f: FormData) {
   const n = Math.max(1, Math.min(50, Number(f.get("goal")) || 5));
   await setSetting("goals", { applicationsPerWeek: n });
   revalidatePath("/");
+}
+
+/* ---------------- "Your part": things only the owner can do ---------------- */
+
+/** Applied somewhere the app didn't see (LinkedIn Easy Apply, a careers fair, a company site…): track it like any other. */
+export async function logOwnApplication(f: FormData) {
+  const u = await requireUser();
+  const employer = str(f, "employer").slice(0, 120), title = str(f, "title").slice(0, 200), site = str(f, "site").slice(0, 60) || "another website";
+  let url = str(f, "url");
+  if (url && !/^https?:\/\//i.test(url)) url = "";
+  if (!employer || !title) redirect("/todo?error=own#own");
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(str(f, "when")) ? str(f, "when") : new Date().toISOString().slice(0, 10);
+  const { evaluate } = await import("@/matching");
+  const { getProfile } = await import("@/profile");
+  const ev = evaluate({ title, employer, location: str(f, "location"), description: "" }, await getProfile());
+  const { createHash } = await import("node:crypto");
+  const fp = "own:" + createHash("sha256").update(`${employer.toLowerCase()}|${title.toLowerCase()}|${url}`).digest("hex").slice(0, 32);
+  const job = await pool.query(
+    `insert into jobs (fingerprint, employer, title, location, country, category, application_url, source_url, listing_status, last_verified_at, last_seen_at,
+       eligibility, eligibility_reasons, missing_evidence, match_score, match_reasons, starred, notes)
+     values ($1,$2,$3,$4,$5,$6,$7,$7,'open',now(),now(),$8,$9,$10,$11,$12,true,$13)
+     on conflict (fingerprint) do update set updated_at = now() returning id`,
+    [fp, employer, title, str(f, "location") || null, ev.country, ev.category, url || null, ev.eligibility.status, JSON.stringify(ev.eligibility.reasons),
+     JSON.stringify(ev.eligibility.missing), ev.score, JSON.stringify(ev.scoreReasons), `You applied yourself on ${site}`]);
+  const evidence = JSON.stringify({ kind: "owner_reported", reference: `Applied by you on ${site}`, at: new Date(`${day}T12:00:00Z`).toISOString() });
+  const app = await pool.query(
+    `insert into applications (job_id, status, submitted_at, submission_evidence) values ($1, 'submitted', $2, $3)
+     on conflict (job_id) do update set status = case when applications.status in ('draft','preparing','awaiting_approval','approved','declined') then 'submitted' else applications.status end,
+       submitted_at = coalesce(applications.submitted_at, excluded.submitted_at), submission_evidence = coalesce(applications.submission_evidence, excluded.submission_evidence), updated_at = now()
+     returning id`, [job.rows[0].id, `${day}T12:00:00Z`, evidence]);
+  await audit("own_application_logged", { site }, u.id);
+  await emit({ type: "application_submitted", level: "success", title: `📨 Tracking: ${title} at ${employer}`, body: `You applied on ${site}. I'll link their emails to it and remind you to follow up.`, applicationId: app.rows[0].id, push: false });
+  revalidatePath("/todo"); revalidatePath("/applications"); revalidatePath("/");
+  redirect("/todo?logged=1#own");
+}
+
+/** One-tap "I've sent it" (no reference needed). */
+export async function quickMarkSent(id: string) {
+  await guarded("mark_submitted", { id });
+  const r = await pool.query(
+    `update applications set status = 'submitted', submitted_at = now(), submission_evidence = $2, updated_at = now() where id = $1 and status = 'approved' returning id`,
+    [id, JSON.stringify({ kind: "owner_reported", reference: "Sent by you", at: new Date().toISOString() })]);
+  if (r.rowCount) await emit({ type: "application_submitted", level: "success", title: "📨 Sent: recorded", body: "Marked as sent by you. I'll watch the inbox for their reply.", applicationId: id, push: false });
+  revalidatePath("/todo"); revalidatePath("/"); revalidatePath(`/applications/${id}`);
+}
+
+/** No reply after a while: wait two more weeks, or close it. */
+export async function chaseLater(id: string) {
+  await requireUser();
+  const { setNote } = await import("@/lib/goahead");
+  await setNote(id, { chaseAfter: new Date(Date.now() + 14 * 86400_000).toISOString() });
+  revalidatePath("/todo");
+}
+export async function markNoReply(id: string) {
+  await requireUser();
+  const { setNote } = await import("@/lib/goahead");
+  await setNote(id, { noReply: new Date().toISOString() });
+  await pool.query(`update applications set status = 'rejected', updated_at = now() where id = $1 and status = 'submitted'`, [id]);
+  revalidatePath("/todo"); revalidatePath("/applications");
+}
+
+/** One-off set-up items (accounts and alerts the app can't create). */
+export async function toggleOnceItem(id: string) {
+  await requireUser();
+  const r = await pool.query(`select value from settings where key = 'onceChecklist'`);
+  const done: string[] = r.rows[0]?.value?.done ?? [];
+  await pool.query(`insert into settings (key, value, updated_at) values ('onceChecklist', $1, now()) on conflict (key) do update set value = excluded.value, updated_at = now()`,
+    [JSON.stringify({ done: done.includes(id) ? done.filter((x) => x !== id) : [...done, id] })]);
+  revalidatePath("/todo");
 }

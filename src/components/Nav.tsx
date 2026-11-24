@@ -26,7 +26,7 @@ export function Nav({ approvals }: { approvals: number }) {
           </Link>
         ))}
       </aside>
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-line glass safe-bottom">
+      <nav className="md:hidden pin-bottom z-40 border-t border-line glass safe-bottom">
         <div className="grid grid-cols-6">
           {TABS.map((t) => (
             <Link key={t.href} href={t.href} className={`relative flex flex-col items-center gap-0.5 pt-2 pb-1 text-[10.5px] font-semibold ${active(t.href) ? "tab-active" : "text-muted"}`}>

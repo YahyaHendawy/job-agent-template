@@ -64,6 +64,7 @@ export async function TodoList() {
     <section className="card p-4">
       <div className="flex items-baseline justify-between mb-2">
         <h2 className="font-bold text-lg">Needs you</h2>
+        <Link href="/todo" className="text-xs text-accent font-semibold ml-auto mr-2">Your part: everything →</Link>
         <span className="text-xs text-muted">{items.length ? `${items.length} item${items.length > 1 ? "s" : ""}` : ""}{deadlines.rows[0].n ? ` · ${deadlines.rows[0].n} deadline${deadlines.rows[0].n > 1 ? "s" : ""} in 3 days` : ""}</span>
       </div>
       {items.length === 0 ? (
