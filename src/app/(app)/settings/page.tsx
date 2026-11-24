@@ -61,6 +61,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <div className="space-y-4">
       <PageHeader title="Settings" subtitle={`Signed in as ${me.email}`} right={<form action={logoutAction}><button className="btn btn-ghost !text-sm">Sign out</button></form>} />
       <SettingsSearch />
+      <a href="/limits" data-settings-item className="card p-4 flex items-center gap-3">
+        <span className="text-xl">🚧</span>
+        <span className="flex-1"><b>What the app can't do</b><br /><span className="text-sm text-muted">Submit for you, write personal answers, search every site… and what to do instead</span></span>
+        <span className="text-accent font-semibold">→</span>
+      </a>
 
       <Section title="Notifications">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">

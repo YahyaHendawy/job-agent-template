@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LimitsNote } from "@/components/Limits";
 import { pool } from "@/db";
 import { PageHeader, fmtTime } from "@/components/ui";
 import { ListControls } from "@/components/ListControls";
@@ -34,6 +35,7 @@ export default async function Emails({ searchParams }: { searchParams: Promise<R
   return (
     <div>
       <PageHeader title="Emails" subtitle={`Your job inbox${todo ? ` · ${todo} need you` : ""}`} />
+      <div className="mb-3"><LimitsNote topic="emails" max={1} /></div>
       <ListControls action="/emails" params={sp} placeholder="Search sender, subject, employer…" count={r.rowCount ?? 0}
         sorts={[["todo", "Needs you first"], ["new", "Newest"], ["old", "Oldest"], ["sender", "Sender A–Z"], ["category", "Type"]]}
         filters={[

@@ -59,3 +59,10 @@ test("a related-degree requirement is not a gap", () => {
   const v = verdict({ ...base, missing_info: ["Requirement without evidence: Currently studying for a bachelor’s or master’s degree in Computer Science, Maths, Machine Learning, Data Science or a related field"] });
   assert.ok(!v.cons.some((c) => /not on your CV/.test(c)));
 });
+
+test("minimum age 21 is flagged for a 19-year-old", () => {
+  const v = verdict({ ...base, description: "Applicants must be 21 or over due to insurance." }, { age: 19 });
+  assert.ok(v.cons.some((c) => /21 or over; you're 19/.test(c)));
+  assert.equal(v.call, "⚠️ Probably skip");
+  assert.ok(!verdict({ ...base, description: "Applicants must be 21 or over." }, { age: 22 }).cons.some((c) => /21/.test(c)));
+});

@@ -9,7 +9,7 @@ export default async function Guide() {
   const uni = P.universityShort || "your university";
   return (
     <div className="space-y-4">
-      <PageHeader title="Guide" subtitle="The parts the app can't do for you — made as easy as possible" />
+      <PageHeader title="Guide" subtitle="The parts the app can't do for you, made as easy as possible" right={<a href="/limits" className="btn btn-ghost !text-sm">What I can't do</a>} />
       <WeeklyCard />
       <section className="card p-4 space-y-3 text-sm">
         <h2 className="font-bold">After you apply: what happens next</h2>

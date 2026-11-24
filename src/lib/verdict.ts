@@ -19,7 +19,7 @@ const inHomeCity = (loc: string) => {
   return h.cityMatch === "london" ? isLondon(loc) : !!h.city && rx(`\\b${esc(h.city)}\\b`, "i").test(loc);
 };
 
-export function verdict(j: VerdictInput): Verdict {
+export function verdict(j: VerdictInput, opts: { age?: number | null } = {}): Verdict {
   const pros: string[] = [], cons: string[] = [];
   const P = persona();
   const uni = P.universityShort || "your university";
@@ -92,6 +92,14 @@ export function verdict(j: VerdictInput): Verdict {
   else if (market(j.country)?.placeCon) cons.push(market(j.country)!.placeCon!);
   if (/remote/i.test(loc)) pros.push("Remote: no travel");
 
+  // --- Minimum age (e.g. bar, driving, some security roles)
+  const minAge = (j.description ?? "").match(/(?:must be|aged?|over the age of|at least|minimum age(?: of)?)\s*(21|23|25)\s*(?:\+|years|or over|and over)/i);
+  if (minAge) {
+    const need = Number(minAge[1]);
+    if (opts.age != null) { if (opts.age < need) cons.push(`Must be ${need} or over; you're ${opts.age}`); }
+    else cons.push(`Says you must be ${need} or over`);
+  }
+
   // --- Other facts
   if (j.salary) pros.push(`Paid: ${j.salary}`);
   if (j.employer === "Unknown employer" || /recruit|agency|staffing/i.test(j.employer)) cons.push("Employer not named (agency advert): check it's genuine before sending your details");
@@ -102,7 +110,7 @@ export function verdict(j: VerdictInput): Verdict {
   }
 
   // --- Overall call
-  const blockers = halal.blocked || cons.some((c) => rx(`deadline has passed|final-year students only|too early|graduating in ${G - 1}`, "i").test(c));
+  const blockers = halal.blocked || cons.some((c) => rx(`deadline has passed|final-year students only|too early|graduating in ${G - 1}|or over; you're`, "i").test(c));
   let call: string, tone: Verdict["tone"];
   if (blockers) { call = "⚠️ Probably skip"; tone = "bad"; }
   else if (halal.warnings.length) { call = "🤔 Your call"; tone = "warn"; } // a halal question comes first

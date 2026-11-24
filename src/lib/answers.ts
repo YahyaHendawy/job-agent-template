@@ -12,6 +12,7 @@ export type ApplicationDetails = {
   email?: string; phone?: string;
   addressLine1?: string; addressLine2?: string; city?: string; postcode?: string; country?: string;
   dateOfBirth?: string; nationality?: string;
+  gender?: "male" | "female" | "prefer_not" | ""; age?: string; ageAsOf?: string;
   linkedin?: string; github?: string; portfolio?: string;
   visaExpiry?: string;
   earliestStartSummer?: string; latestEndSummer?: string; termTimeHours?: string;
@@ -105,7 +106,12 @@ export function standardAnswers(job: JobLite, p: Profile, d: ApplicationDetails)
   add("Other", "Do you have any unspent criminal convictions?", d.unspentConvictions === "no" ? "No" : d.unspentConvictions === "yes" ? "Yes (answer yourself on the form)" : "",
     { sensitive: true, needsYou: d.unspentConvictions ? (d.unspentConvictions === "yes" ? "Answer this one yourself on the form" : undefined) : "Answer once in Application details" });
   add("Other", "How did you hear about us?", d.howHeard);
-  for (const q of ["Gender", "Ethnicity", "Religion or belief", "Disability", "Sexual orientation", "Age group"])
+  const g = d.gender === "male" ? "Male" : d.gender === "female" ? "Female" : "Prefer not to say";
+  add("Equal opportunities (optional)", "Gender", g);
+  const age = currentAge(d);
+  if (age) add("Personal", "Are you 18 or over?", age >= 18 ? "Yes" : "No");
+  add("Equal opportunities (optional)", "Age group", age ? ageBand(age) : "Prefer not to say");
+  for (const q of ["Ethnicity", "Religion or belief", "Disability", "Sexual orientation"])
     add("Equal opportunities (optional)", q, "Prefer not to say");
   return a;
 }
@@ -130,3 +136,13 @@ export function writingPrompts(job: JobLite, p: Profile) {
     facts,
   };
 }
+
+/** Age now, from the age given and the date it was given (no date of birth stored). */
+export function currentAge(d: ApplicationDetails): number | null {
+  const n = Number(d.age);
+  if (!n) return null;
+  const since = d.ageAsOf ? (Date.now() - Date.parse(d.ageAsOf)) / (365.25 * 86400000) : 0;
+  return Math.floor(n + Math.max(0, since));
+}
+/** The usual equal-opportunities age band. */
+export const ageBand = (age: number) => (age < 18 ? "Under 18" : age <= 24 ? "18-24" : age <= 34 ? "25-34" : age <= 44 ? "35-44" : "45+");

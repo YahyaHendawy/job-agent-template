@@ -33,6 +33,8 @@ export const detailFields = (): DetailField[] => {
   { group: addr, key: "city", label: "City" },
   { group: addr, key: "postcode", label: "Postcode" },
   { group: addr, key: "country", label: "Country" },
+  { group: "About you", key: "gender", label: "Gender (for equal-opportunities questions)", options: ["", "male", "female", "prefer_not"], hint: "Other equal-opportunities questions are answered “Prefer not to say”" },
+  { group: "About you", key: "age", label: "Age", hint: "Used for “Are you 18 or over?” and age-group questions; it updates itself each year" },
   { group: "Links", key: "linkedin", label: "LinkedIn URL", type: "url" },
   { group: "Links", key: "github", label: "GitHub URL (optional)", type: "url" },
   { group: "Links", key: "portfolio", label: "Website / portfolio (optional)", type: "url" },

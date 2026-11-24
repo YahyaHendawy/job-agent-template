@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Job Agent Autofill",
   "short_name": "Job Agent",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Fills job application forms with your verified Job Agent details and tailored CV. Never submits for you.",
   "icons": { "48": "icons/icon-48.png", "96": "icons/icon-96.png", "128": "icons/icon-128.png" },
   "action": { "default_title": "Job Agent", "default_popup": "popup.html", "default_icon": { "48": "icons/icon-48.png" } },

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LimitsNote } from "@/components/Limits";
 import { COUNTRIES, loadPersona } from "@/lib/persona";
 import { isHomeCity } from "@/matching";
 import { pool } from "@/db";
@@ -132,6 +133,7 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
         </table>
       </div>
       <p className="text-xs text-muted mt-2">Swipe sideways to see every column. Tap a title to open it in full.</p>
+      <div className="mt-3"><LimitsNote topic="compare" max={2} /></div>
     </div>
   );
 }

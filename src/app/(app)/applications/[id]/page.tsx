@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LimitsNote } from "@/components/Limits";
 import { COUNTRIES } from "@/lib/persona";
 import { CompareToggle } from "@/components/Compare";
 import { notFound } from "next/navigation";
@@ -17,7 +18,7 @@ import { stages } from "@/lib/guide";
 import { keyOf, questionsFor, suggestionsFor } from "@/lib/written";
 import { getProfile } from "@/profile";
 import { getDetails } from "@/lib/details";
-import { standardAnswers, writingPrompts } from "@/lib/answers";
+import { standardAnswers, writingPrompts, currentAge } from "@/lib/answers";
 import { readNotes } from "@/lib/goahead";
 
 const EVIDENCE_COLOR: Record<string, string> = { verified: "var(--good)", user_stated: "var(--warn)", missing: "var(--bad)", general: "var(--muted)" };
@@ -84,7 +85,7 @@ export default async function AppDetail({ params, searchParams }: { params: Prom
   }));
   const ev = await pool.query(`select id, ts, title, level from events where application_id = $1 order by id desc limit 20`, [id]);
 
-  const v = verdict(a);
+  const v = verdict(a, { age: currentAge(details as any) });
   const pre = ["awaiting_approval", "approved", "draft", "preparing", "declined"].includes(a.status);
   const unanswered = answersUI.filter((q) => !q.answer.trim());
   const dv = details as Record<string, any>;
@@ -180,6 +181,8 @@ export default async function AppDetail({ params, searchParams }: { params: Prom
         )}
         {a.submission_evidence && <p className="text-sm mt-3">Sent: {a.submission_evidence.reference} ({a.submission_evidence.kind.replace(/_/g, " ")}, {fmtTime(a.submission_evidence.at)})</p>}
       </div>
+
+      {["awaiting_approval", "approved"].includes(a.status) && <LimitsNote topic="apply" max={4} />}
 
       {!pre && <StageGuide app={a} rejectionEmailId={rejection} />}
 

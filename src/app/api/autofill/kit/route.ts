@@ -2,6 +2,7 @@ import { pool } from "@/db";
 import { tokenUser, CORS } from "@/lib/auth";
 import { getProfile } from "@/profile";
 import { getDetails } from "@/lib/details";
+import { currentAge } from "@/lib/answers";
 import { standardAnswers, writingPrompts } from "@/lib/answers";
 import { cvPdf } from "@/lib/cvpdf";
 import { getSettings } from "@/lib/settings";
@@ -41,6 +42,7 @@ export async function GET(req: Request) {
   const pdf = await cvPdf(app.cv_markdown, `${profile.name} - CV`);
   return Response.json({
     match: { id: app.id, title: app.title, employer: app.employer },
+    age: currentAge(details),
     details: { ...details, university: profile.education?.[0]?.institution, degree: profile.education?.[0]?.degree, graduationYear: String(app.category === "placement" && persona().gradYearPlacement ? persona().gradYearPlacement : persona().gradYear), discipline: persona().degreeSubject || profile.education?.[0]?.degree },
     answers,
     writing,

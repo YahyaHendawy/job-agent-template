@@ -43,6 +43,8 @@
     const opts = [...select.options].filter((o) => o.value !== "" && !/^(select|choose|please|--)/i.test(o.text.trim()));
     let o;
     if (want === "PREFER_NOT") o = opts.find((x) => PREFER_NOT.test(x.text));
+    else if (want === "MALE" || want === "FEMALE") o = opts.find((x) => (want === "MALE" ? /^\s*(male|man)\b/i : /^\s*(female|woman)\b/i).test(x.text));
+    else if (want.startsWith("AGE:")) o = opts.find((x) => inBand(x.text, Number(want.slice(4))));
     else if (/^yes\b/i.test(want)) o = opts.find((x) => /^yes\b/i.test(x.text.trim()));
     else if (/^no\b/i.test(want)) o = opts.find((x) => /^no\b/i.test(x.text.trim()));
     else {
@@ -53,11 +55,24 @@
     setValue(select, o.value);
     return true;
   }
+  // "18-24", "18 to 24", "16–24", "25+" → does the age fall in it?
+  function inBand(text, age) {
+    const t = String(text).replace(/[–—]/g, "-");
+    const m = t.match(/(\d{2})\s*(?:-|to)\s*(\d{2})/);
+    if (m) return age >= +m[1] && age <= +m[2];
+    const plus = t.match(/(\d{2})\s*(\+|or over|and over)/);
+    if (plus) return age >= +plus[1];
+    const under = t.match(/under\s*(\d{2})/i);
+    if (under) return age < +under[1];
+    return false;
+  }
   const radioGroup = (r) => (r.name ? [...document.querySelectorAll(`input[type=radio][name="${CSS.escape(r.name)}"]`)] : [r]);
   function chooseRadio(radio, want) {
     const group = radioGroup(radio);
     const lab = (r) => (txt(r.closest("label")) || txt(document.querySelector(`label[for="${CSS.escape(r.id || "x")}"]`)) || r.value || "").trim();
     const pick = want === "PREFER_NOT" ? group.find((r) => PREFER_NOT.test(lab(r)))
+      : want === "MALE" ? group.find((r) => /^\s*(male|man)\b/i.test(lab(r))) : want === "FEMALE" ? group.find((r) => /^\s*(female|woman)\b/i.test(lab(r)))
+      : want.startsWith("AGE:") ? group.find((r) => inBand(lab(r), Number(want.slice(4))))
       : /^yes\b/i.test(want) ? group.find((r) => /^yes\b/i.test(lab(r))) : /^no\b/i.test(want) ? group.find((r) => /^no\b/i.test(lab(r))) : null;
     if (!pick) return false;
     if (!pick.checked) pick.click();
@@ -88,7 +103,11 @@
       [/right to work|authori[sz]ed to work|eligible to work|legally (able|entitled|permitted) to work|permission to work/, yesNo(ans(/right to work/i))],
       [/visa (type|status)|immigration status|work permit/, ans(/visa type/i)],
       [/nationality|citizenship/, d.nationality],
-      [/gender|pronoun|ethnic|race|religio|belief|disab|sexual|orientation|veteran|transgender|trans |age (group|range)|marital|caring|socio|free school|first generation|parents? (attend|went)/, "PREFER_NOT"],
+      [/(are you|aged?|at least|over) (18|eighteen)|18 (years|or over|\+)|over the age of 18|minimum age/, kit.age ? (kit.age >= 18 ? "Yes" : "No") : ""],
+      [/\bgender\b|\bsex\b(?!ual)/, d.gender === "male" ? "MALE" : d.gender === "female" ? "FEMALE" : "PREFER_NOT"],
+      [/age (group|range|band|bracket)/, kit.age ? `AGE:${kit.age}` : "PREFER_NOT"],
+      [/^(your )?age\b|how old/, kit.age ? String(kit.age) : ""],
+      [/pronoun|ethnic|race|religio|belief|disab|sexual|orientation|veteran|transgender|trans |marital|caring|socio|free school|first generation|parents? (attend|went)/, "PREFER_NOT"],
       [/driv(ing|er'?s) licen/, d.drivingLicence === "yes" ? "Yes" : d.drivingLicence === "no" ? "No" : ""],
       [/convict|criminal|offen[cs]e/, d.unspentConvictions === "no" ? "No" : ""],
       [/start date|available from|earliest (start|available)|availability date/, d.earliestStartSummer],
@@ -177,7 +196,7 @@
       if (el.tagName === "SELECT") ok = (el.value && el.selectedIndex > 0) || chooseOption(el, value);
       else if (el.type === "radio") ok = radioGroup(el).some((r) => r.checked) || chooseRadio(el, value);
       else if (value !== "PREFER_NOT" && !el.value) {
-        let v = value;
+        let v = value === "MALE" ? "Male" : value === "FEMALE" ? "Female" : value.startsWith("AGE:") ? "" : value; // codes → words for free-text boxes
         if (el.type === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(v)) v = /^\d{4}$/.test(v) ? `${v}-06-30` : "";
         if (v) { setValue(el, v); ok = true; }
       } else ok = !!el.value;

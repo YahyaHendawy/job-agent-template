@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LimitsNote } from "@/components/Limits";
 import { persona, countryName, loadPersona } from "@/lib/persona";
 import { pool } from "@/db";
 import { ControlButtons } from "@/components/ControlButtons";
@@ -47,8 +48,17 @@ export default async function Home() {
   const color = s.emergency_stop || !workerOk ? "var(--bad)" : s.status === "running" ? "var(--good)" : "var(--warn)";
   const k = stats.rows[0];
 
+  // Greeting by name (preferred name from Application details, else first name from the CV)
+  const who = (await pool.query(`select coalesce(nullif(s.value->>'preferredName', ''), nullif(s.value->>'firstName', ''), split_part(p.data->>'name', ' ', 1)) n
+      from (select 1) x left join settings s on s.key = 'applicationDetails' left join profile p on true limit 1`)).rows[0]?.n || "";
+  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: persona().timeZone || "Europe/London" });
+
   return (
     <div className="space-y-4">
+      <header className="pt-1">
+        <h1 className="text-2xl font-bold tracking-tight">Greetings{who ? `, ${who}` : ""} 👋</h1>
+        <p className="text-sm text-muted">{today}</p>
+      </header>
       <SearchBox action="/search" placeholder="Search jobs, applications, emails, activity…" />
       <section className="card p-4 gradient-hero">
         <div className="flex items-center gap-2">
@@ -68,6 +78,7 @@ export default async function Home() {
       <GoalCard />
 
       <WeeklyCard compact />
+      <LimitsNote topic="home" max={4} />
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[

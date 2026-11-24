@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LimitsNote } from "@/components/Limits";
 import { CompareToggle } from "@/components/Compare";
 import { pool } from "@/db";
 import { loadPersona, persona, homeCitySql, marketOptions } from "@/lib/persona";
@@ -59,6 +60,7 @@ export default async function Jobs({ searchParams }: { searchParams: SP }) {
           ))}
         </div>
       </section>
+      <div className="mb-3"><LimitsNote topic="jobs" max={2} /></div>
       <ListControls action="/jobs" params={sp} placeholder="Search title, employer, location" count={r.rowCount ?? 0}
         sorts={[["score", "Best match"], ["score_asc", "Lowest match"], ["new", "Newest found"], ["old", "Oldest found"], ["deadline", "Deadline: soonest"],
           ["deadline_desc", "Deadline: latest"], ["employer", "Employer A–Z"], ["title", "Job title A–Z"], ["verified", "Recently verified"], ["country", "Country"]]}
