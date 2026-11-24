@@ -56,8 +56,8 @@ export default async function Home() {
   return (
     <div className="space-y-4">
       <header className="pt-1">
-        <h1 className="text-3xl font-extrabold tracking-tight"><span className="aura-text">Greetings{who ? `, ${who}` : ""}</span> <span className="inline-block origin-[70%_70%] wave">👋</span></h1>
-        <p className="text-sm text-muted">{today}</p>
+        <p className="hud-label mb-1"><span className="blink" style={{ color: "var(--accent)" }}>●</span> Systems online · <b>{today}</b></p>
+        <h1 className="text-3xl font-black tracking-tight"><span className="aura-text">Greetings{who ? `, ${who}` : ""}.</span></h1>
       </header>
       <SearchBox action="/search" placeholder="Search jobs, applications, emails, activity…" />
       <section className="card p-4 gradient-hero">
