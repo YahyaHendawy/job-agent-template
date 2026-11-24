@@ -1,0 +1,577 @@
+[
+  {
+    "kind": "greenhouse",
+    "token": "riverlane",
+    "employer": "Riverlane",
+    "sector": "quantum computing",
+    "total": 32,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "graphcore",
+    "employer": "Graphcore",
+    "sector": "semiconductors",
+    "total": 188,
+    "relevantNow": 25,
+    "sample": [
+      "Cloud Platform Summer Intern 2027  | Bristol, UK",
+      "Firmware Summer Intern 2027 | Bristol, UK",
+      "Graduate Cloud Platform Engineer 2027 | Bristol, UK"
+    ]
+  },
+  {
+    "kind": "greenhouse",
+    "token": "cloudflare",
+    "employer": "Cloudflare",
+    "sector": "internet infrastructure",
+    "total": 504,
+    "relevantNow": 3,
+    "sample": [
+      "People Team Intern, EMEA Employment Compliance & Manager Enablement (Spring 2027) | In-Office",
+      "Product Manager Intern (2027) - London, UK | In-Office",
+      "Software Engineer Intern (2027) - London, UK | In-Office"
+    ]
+  },
+  {
+    "kind": "greenhouse",
+    "token": "monzo",
+    "employer": "Monzo",
+    "sector": "fintech",
+    "total": 53,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "isomorphiclabs",
+    "employer": "Isomorphic Labs",
+    "sector": "AI",
+    "total": 38,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "relativity",
+    "employer": "Relativity Space",
+    "sector": "space",
+    "total": 396,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "equalexperts",
+    "employer": "Equal Experts",
+    "sector": "consultancy",
+    "total": 16,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "anthropic",
+    "employer": "Anthropic",
+    "sector": "AI",
+    "total": 634,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "spacex",
+    "employer": "SpaceX",
+    "sector": "space",
+    "total": 2853,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "lucidmotors",
+    "employer": "Lucid Motors",
+    "sector": "EV",
+    "total": 493,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "figma",
+    "employer": "Figma",
+    "sector": "software",
+    "total": 148,
+    "relevantNow": 5,
+    "sample": [
+      "Data Engineer Intern (2027) | San Francisco, CA \u2022 New York, NY",
+      "Early Career, Inside Sales Representative (2027) | San Francisco, CA \u2022 New York, NY",
+      "Product Design Intern (2027) | San Francisco, CA \u2022 New York, NY"
+    ]
+  },
+  {
+    "kind": "greenhouse",
+    "token": "databricks",
+    "employer": "Databricks",
+    "sector": "software",
+    "total": 883,
+    "relevantNow": 1,
+    "sample": [
+      "Software Engineering Intern (2027 Start) - London | London, United Kingdom"
+    ]
+  },
+  {
+    "kind": "lever",
+    "token": "palantir",
+    "employer": "Palantir",
+    "sector": "software",
+    "total": 306,
+    "relevantNow": 26,
+    "sample": [
+      "Finance Operator Intern | New York, NY / New York, NY",
+      "Forward Deployed Software Engineer, Internship - France | New York, NY / New York, NY",
+      "Forward Deployed Software Engineer, Internship - UK Government | London, United Kingdom / London, United Kingdom"
+    ]
+  },
+  {
+    "kind": "lever",
+    "token": "spotify",
+    "employer": "Spotify",
+    "sector": "software",
+    "total": 90,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "lever",
+    "token": "moonpig",
+    "employer": "Moonpig",
+    "sector": "e-commerce",
+    "total": 12,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "lever",
+    "token": "dexterity",
+    "employer": "Dexterity",
+    "sector": "robotics",
+    "total": 14,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "lever",
+    "token": "veo",
+    "employer": "Veo",
+    "sector": "tech",
+    "total": 24,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "lever",
+    "token": "kpler",
+    "employer": "Kpler",
+    "sector": "energy data",
+    "total": 106,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "ashby",
+    "token": "wayve",
+    "employer": "Wayve",
+    "sector": "autonomous vehicles",
+    "total": 151,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "ashby",
+    "token": "synthesia",
+    "employer": "Synthesia",
+    "sector": "AI",
+    "total": 26,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "ashby",
+    "token": "elevenlabs",
+    "employer": "ElevenLabs",
+    "sector": "AI",
+    "total": 122,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "ashby",
+    "token": "openai",
+    "employer": "OpenAI",
+    "sector": "AI",
+    "total": 853,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "ashby",
+    "token": "cuspai",
+    "employer": "CuspAI",
+    "sector": "AI materials",
+    "total": 25,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "ashby",
+    "token": "humanoid",
+    "employer": "Humanoid",
+    "sector": "robotics",
+    "total": 89,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "BoschGroup",
+    "employer": "Bosch",
+    "sector": "engineering",
+    "total": 2000,
+    "relevantNow": 22,
+    "sample": [
+      "HR L&D Training Administrator Intern | Denham, England, United Kingdom",
+      "ETAS Agile Product Delivery Intern | York, England, United Kingdom",
+      "Sales Intern  | Plymouth, MI, us"
+    ]
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "Ubisoft2",
+    "employer": "Ubisoft",
+    "sector": "games",
+    "total": 225,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "Wabtec",
+    "employer": "Wabtec",
+    "sector": "rail engineering",
+    "total": 714,
+    "relevantNow": 1,
+    "sample": [
+      "Trainee Machinist | Lincoln, KC, United Kingdom"
+    ]
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "Continental",
+    "employer": "Continental",
+    "sector": "automotive",
+    "total": 533,
+    "relevantNow": 5,
+    "sample": [
+      "2027 Internship - Finance & Controlling (Hoosier Racing Tire) | Plymouth, IN, us",
+      "2027 Internship - Human Resources (Hoosier Racing Tire) | Plymouth, IN, us",
+      "2027 Internship \u2013 Compound Engineer (Hoosier Racing Tire)  | Plymouth, IN, us"
+    ]
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "SGS",
+    "employer": "SGS",
+    "sector": "testing",
+    "total": 2000,
+    "relevantNow": 1,
+    "sample": [
+      "Industrial Hygiene Technician | Qatar, qa"
+    ]
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "McDonaldsCorporation",
+    "employer": "McDonald's",
+    "sector": "hospitality",
+    "total": 3,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "Primark",
+    "employer": "Primark",
+    "sector": "retail",
+    "total": 736,
+    "relevantNow": 13,
+    "sample": [
+      "Replenishment Sales Associate (Part-Time) | Valley Stream, NEW YORK, us",
+      "Sales Associate (Part-Time) | Valley Stream, NEW YORK, us",
+      "Seasonal Sales Associate (Part-Time) | Valley Stream, NEW YORK, us"
+    ]
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "Sodexo",
+    "employer": "Sodexo",
+    "sector": "facilities",
+    "total": 151,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "Thales",
+    "employer": "Thales",
+    "sector": "defence/electronics",
+    "total": 2,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "workable",
+    "token": "robusta",
+    "employer": "robusta",
+    "sector": "Egypt",
+    "total": 87,
+    "menaNow": 41,
+    "relevantNow": 0,
+    "sample": [
+      "Chief Technology Officer (CTO) - Octopus by RTG | Cairo, Cairo Governorate, Egypt",
+      "Data Capability Manager - RTG | Cairo, Cairo Governorate, Egypt",
+      "Digital & CRM Executive (CX & CRM focus) -Remote - Octopus by RTG | Cairo, Cairo Governorate, Egypt"
+    ]
+  },
+  {
+    "kind": "workable",
+    "token": "flapkap",
+    "employer": "flapkap",
+    "sector": "Egypt",
+    "total": 1,
+    "menaNow": 1,
+    "relevantNow": 0,
+    "sample": [
+      "Sales Development Representative | Maadi, Al Q\u0101hirah, Egypt"
+    ]
+  },
+  {
+    "kind": "ashby",
+    "token": "thndr",
+    "employer": "thndr",
+    "sector": "MENA",
+    "total": 17,
+    "menaNow": 12,
+    "relevantNow": 0,
+    "sample": [
+      "Senior Tech Talent Partner | Cairo Office",
+      "Senior Revenue Accountant  | Cairo Office",
+      "Senior Information Security Specialist - GRC  | Cairo Office"
+    ]
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "DeliveryHero",
+    "employer": "DeliveryHero",
+    "sector": "multinational",
+    "total": 795,
+    "menaNow": 51,
+    "relevantNow": 0,
+    "sample": [
+      "Online Account Manager - Vendor Help Desk | Maadi, eg",
+      "Team Lead Acquisition | Maadi, eg",
+      "Manager Core People Operations | Maadi, eg"
+    ]
+  },
+  {
+    "kind": "breezy",
+    "token": "reiss",
+    "employer": "reiss",
+    "sector": "London employer",
+    "total": 254,
+    "londonNow": 76,
+    "ptNow": 42,
+    "sample": [
+      "Register Your Interest | London, Barrett Street, United Kingdom",
+      "Register Your Interest | London, Brent Cross, United Kingdom",
+      "Register Your Interest | London, Stratford, United Kingdom"
+    ]
+  },
+  {
+    "kind": "workable",
+    "token": "whistles",
+    "employer": "whistles",
+    "sector": "London employer",
+    "total": 1,
+    "londonNow": 1,
+    "ptNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "ashby",
+    "token": "backmarket",
+    "employer": "backmarket",
+    "sector": "London employer",
+    "total": 31,
+    "londonNow": 3,
+    "ptNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "deliveroo",
+    "employer": "deliveroo",
+    "sector": "London employer",
+    "total": 188,
+    "londonNow": 114,
+    "ptNow": 2,
+    "sample": [
+      "Executive Researcher, DoorDash International | London, United Kingdom - Deliveroo",
+      "Software Engineering Summer Internship 2027 (London) | London, United Kingdom - Deliveroo"
+    ]
+  },
+  {
+    "kind": "greenhouse",
+    "token": "hellofresh",
+    "employer": "hellofresh",
+    "sector": "London employer",
+    "total": 371,
+    "londonNow": 5,
+    "ptNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "tamara",
+    "employer": "tamara",
+    "sector": "MENA",
+    "total": 36,
+    "menaNow": 13,
+    "relevantNow": 0,
+    "sample": [
+      "Collections Advisor  | Cairo, Egypt ",
+      "Copy Writer | Cairo, Egypt",
+      "Customer Care Manager - UAE | Cairo, Egypt"
+    ]
+  },
+  {
+    "kind": "workable",
+    "token": "zeroavia",
+    "employer": "ZeroAvia",
+    "sector": "aerospace",
+    "total": 12,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "ashby",
+    "token": "vertical-aerospace",
+    "employer": "Vertical Aerospace",
+    "sector": "aerospace",
+    "total": 10,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "workable",
+    "token": "satellitevu",
+    "employer": "Satellite Vu",
+    "sector": "space",
+    "total": 1,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "ashby",
+    "token": "kaluza",
+    "employer": "Kaluza",
+    "sector": "energy software",
+    "total": 57,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "ovoenergy",
+    "employer": "OVO",
+    "sector": "energy",
+    "total": 1,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "greenhouse",
+    "token": "lunarenergy",
+    "employer": "Lunar Energy",
+    "sector": "energy",
+    "total": 19,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "workable",
+    "token": "habitat-energy",
+    "employer": "Habitat Energy",
+    "sector": "energy",
+    "total": 8,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "workable",
+    "token": "raspberrypi",
+    "employer": "Raspberry Pi",
+    "sector": "electronics",
+    "total": 5,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "workable",
+    "token": "universalquantum",
+    "employer": "Universal Quantum",
+    "sector": "quantum",
+    "total": 38,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "workable",
+    "token": "nu-quantum",
+    "employer": "Nu Quantum",
+    "sector": "quantum",
+    "total": 6,
+    "relevantNow": 1,
+    "sample": [
+      "FPGA Engineer - Quantum Networking (Early Career) | Cambridge, England, United Kingdom"
+    ]
+  },
+  {
+    "kind": "ashby",
+    "token": "axelera",
+    "employer": "Axelera AI",
+    "sector": "semiconductors",
+    "total": 14,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "smartrecruiters",
+    "token": "Cityfibre",
+    "employer": "CityFibre",
+    "sector": "telecoms",
+    "total": 4,
+    "relevantNow": 0,
+    "sample": []
+  },
+  {
+    "kind": "ashby",
+    "token": "andela",
+    "employer": "Andela",
+    "sector": "software",
+    "total": 5,
+    "relevantNow": 0,
+    "sample": []
+  }
+]

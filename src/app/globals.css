@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+}
+
+:root {
+  --bg: #f5f6f8; --surface: #ffffff; --surface-2: #eef0f4; --line: #e2e5ea;
+  --ink: #12151a; --muted: #5d6573; --accent: #2457f5; --accent-ink: #ffffff;
+  --good: #12805c; --warn: #b86e00; --bad: #c8312b;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c0e12; --surface: #15181e; --surface-2: #1d2129; --line: #272c36;
+    --ink: #eef1f6; --muted: #98a1b0; --accent: #5b82ff; --accent-ink: #ffffff;
+    --good: #3fcf96; --warn: #f0a63a; --bad: #ff6b63;
+    color-scheme: dark;
+  }
+}
+
+html, body { background: var(--bg); color: var(--ink); }
+body { -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
+.safe-bottom { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+.safe-top { padding-top: env(safe-area-inset-top); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border-radius: .75rem; padding: .55rem .9rem; font-weight: 600; font-size: .9rem; transition: opacity .15s, transform .05s; }
+.btn:active { transform: scale(.98); }
+.btn:disabled { opacity: .5; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-ghost { background: var(--surface-2); color: var(--ink); }
+.btn-danger { background: var(--bad); color: #fff; }
+.input { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: .75rem; padding: .6rem .8rem; font-size: 1rem; }
+.input:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+.chip { display: inline-flex; align-items: center; gap: .25rem; border-radius: 999px; padding: .15rem .55rem; font-size: .72rem; font-weight: 600; border: 1px solid var(--line); background: var(--surface-2); white-space: nowrap; }
+.prose-cv h1 { font-size: 1.3rem; font-weight: 700; }
+.prose-cv h2 { font-size: 1rem; font-weight: 700; margin-top: 1rem; border-bottom: 1px solid var(--line); padding-bottom: .2rem; }
+.prose-cv li { margin-left: 1.1rem; list-style: disc; }
+.prose-cv p { margin: .25rem 0; }
+
+/* ---------- Motion & polish ---------- */
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes draw { from { stroke-dasharray: 0 100; } }
+main > div > * , main > div > section { animation: rise .45s cubic-bezier(.2,.7,.2,1) both; }
+main > div > *:nth-child(2) { animation-delay: .04s; } main > div > *:nth-child(3) { animation-delay: .08s; }
+main > div > *:nth-child(4) { animation-delay: .12s; } main > div > *:nth-child(5) { animation-delay: .16s; }
+main > div > *:nth-child(n+6) { animation-delay: .2s; }
+.bar-grow { transform-origin: left; animation: grow-x .8s cubic-bezier(.2,.7,.2,1) both; }
+.col-grow { transform-origin: bottom; animation: grow-y .6s cubic-bezier(.2,.7,.2,1) both; }
+.donut-seg { animation: draw 1s cubic-bezier(.2,.7,.2,1) both; }
+.card { transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+a.card:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+a.card:active, .btn:active { transform: scale(.985); }
+.btn { transition: transform .08s ease, opacity .15s ease, background .15s ease; }
+.gradient-hero { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, var(--surface)) 0%, var(--surface) 60%); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

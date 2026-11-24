@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Job Agent Autofill",
+  "short_name": "Job Agent",
+  "version": "1.2.0",
+  "description": "Fills job application forms with your verified Job Agent details and tailored CV. Never submits for you.",
+  "icons": { "48": "icons/icon-48.png", "96": "icons/icon-96.png", "128": "icons/icon-128.png" },
+  "action": { "default_title": "Job Agent", "default_popup": "popup.html", "default_icon": { "48": "icons/icon-48.png" } },
+  "background": { "scripts": ["background.js"] },
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://*.vercel.app/*",
+    "http://localhost:3000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://*.vercel.app/*", "http://localhost:3000/*"],
+      "js": ["app-bridge.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://boards.greenhouse.io/*", "https://job-boards.greenhouse.io/*", "https://job-boards.eu.greenhouse.io/*",
+        "https://jobs.lever.co/*", "https://jobs.eu.lever.co/*",
+        "https://jobs.ashbyhq.com/*",
+        "https://apply.workable.com/*",
+        "https://jobs.smartrecruiters.com/*",
+        "https://*.recruitee.com/*",
+        "https://*.breezy.hr/*",
+        "http://localhost:8765/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

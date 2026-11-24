@@ -1,0 +1,58 @@
+{
+  "name": "job-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:db": "tsx scripts/dev-db.ts",
+    "dev": "next dev -p 3000",
+    "worker": "tsx --env-file-if-exists=.env src/worker/index.ts",
+    "build": "next build",
+    "vercel-build": "tsx scripts/migrate.ts && tsx scripts/seed.ts && tsx scripts/auto-scheduler.ts && next build",
+    "start": "next start -p ${PORT:-3000}",
+    "start:web": "npm run db:migrate && npm run seed && next start -p ${PORT:-3000}",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx --env-file-if-exists=.env scripts/migrate.ts",
+    "seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
+    "probe": "tsx scripts/probe-sources.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.8.2",
+    "drizzle-orm": "0.45.4",
+    "imapflow": "^2.11.0",
+    "mailparser": "^3.14.2",
+    "next": "16.4.6",
+    "nodemailer": "^10.4.0",
+    "pdf-lib": "^1.17.1",
+    "pg": "8.23.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "web-push": "4.0.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.5",
+    "@types/mailparser": "^3.9.0",
+    "@types/node": "26.6.6",
+    "@types/nodemailer": "^8.0.2",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/web-push": "3.6.4",
+    "drizzle-kit": "0.31.11",
+    "embedded-postgres": "18.4.0-beta.17",
+    "tailwindcss": "4.3.5",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  },
+  "allowScripts": {
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true,
+    "@embedded-postgres/darwin-arm64@18.4.0-beta.17": true
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "completed": true,
+  "university": "Example University",
+  "universityShort": "EXU",
+  "degreeSubject": "Electrical & Electronic",
+  "fieldName": "engineering",
+  "yearOfStudy": "2nd year (2026/27)",
+  "gradYear": 2028,
+  "gradYearPlacement": 2029,
+  "summerYear": 2027,
+  "summerWindow": "about mid-June to mid-September",
+  "visa": {
+    "preset": "uk_student",
+    "expiry": "Oct 2028",
+    "termHours": 20
+  },
+  "home": {
+    "country": "UK",
+    "city": "London",
+    "cityMatch": "london"
+  },
+  "markets": [
+    {
+      "code": "QA",
+      "rightToWork": "resident",
+      "priority": 8,
+      "eligibilityReason": "Qatar: you hold a residence permit there, so you can work once the employer arranges a work permit.",
+      "eligibilityLevel": "potentially_eligible",
+      "verdictPro": "You can work in Qatar on your residence permit (employer arranges the work permit)",
+      "placePro": "In Qatar, where you hold a residence permit",
+      "answerNeedsYou": "Qatar: confirm your residence permit type"
+    },
+    {
+      "code": "EG",
+      "rightToWork": "citizen",
+      "priority": 8,
+      "eligibilityReason": "Egypt: as a citizen you have the right to work.",
+      "placeCon": "In Egypt: only works during your summer break, and you cover travel",
+      "answer": "Yes, I am a citizen."
+    },
+    {
+      "code": "UK",
+      "rightToWork": "visa"
+    }
+  ],
+  "remoteOk": true,
+  "interests": [
+    {
+      "pattern": "\\bembedded|firmware|microcontroller|stm32|arduino|rtos\\b",
+      "weight": 14,
+      "label": "embedded systems"
+    },
+    {
+      "pattern": "\\belectronic|electronics|pcb|circuit|analogue|analog|hardware\\b",
+      "weight": 12,
+      "label": "electronics / hardware"
+    },
+    {
+      "pattern": "\\belectrical|electrified|electrification\\b",
+      "weight": 12,
+      "label": "electrical engineering"
+    },
+    {
+      "pattern": "\\bpower electronics|power systems|grid|substation|transmission|distribution network|high voltage|hv\\b",
+      "weight": 10,
+      "label": "power / electrical infrastructure"
+    },
+    {
+      "pattern": "\\benergy|renewable|solar|wind|battery|ev charging|net zero|smart energy|lng\\b",
+      "weight": 10,
+      "label": "energy"
+    },
+    {
+      "pattern": "\\bcontrol systems?|plc|scada|automation|mechatronic\\b",
+      "weight": 10,
+      "label": "control / automation"
+    },
+    {
+      "pattern": "\\brobot|robotics|autonomous\\b",
+      "weight": 10,
+      "label": "robotics"
+    },
+    {
+      "pattern": "\\btest engineer|testing|validation|verification|reliability|quality\\b",
+      "weight": 6,
+      "label": "test / reliability"
+    },
+    {
+      "pattern": "\\bmedical device|biomedical|medtech|healthcare technology\\b",
+      "weight": 9,
+      "label": "medical technology"
+    },
+    {
+      "pattern": "\\bdata cent(re|er)\\b",
+      "weight": 8,
+      "label": "data centres"
+    },
+    {
+      "pattern": "\\bsemiconductor|fpga|asic|vlsi|chip\\b",
+      "weight": 9,
+      "label": "semiconductors"
+    },
+    {
+      "pattern": "\\biot|internet of things|sensor\\b",
+      "weight": 8,
+      "label": "IoT / sensors"
+    },
+    {
+      "pattern": "\\bconsultan(cy|t)\\b",
+      "weight": 5,
+      "label": "engineering consultancy"
+    },
+    {
+      "pattern": "\\bsignal processing|dsp|rf|telecom|5g|wireless\\b",
+      "weight": 7,
+      "label": "signals / RF"
+    }
+  ],
+  "skills": [
+    {
+      "pattern": "\\bpython\\b",
+      "label": "Python"
+    },
+    {
+      "pattern": "\\bc\\+\\+|\\bc\\/c\\+\\+",
+      "label": "C++"
+    },
+    {
+      "pattern": "\\bmatlab\\b",
+      "label": "MATLAB"
+    },
+    {
+      "pattern": "\\bsql\\b",
+      "label": "SQL"
+    },
+    {
+      "pattern": "\\bjavascript\\b",
+      "label": "JavaScript"
+    },
+    {
+      "pattern": "\\bltspice|spice\\b",
+      "label": "LTspice"
+    },
+    {
+      "pattern": "\\boscilloscope|multimeter|soldering\\b",
+      "label": "lab equipment"
+    }
+  ],
+  "technicalTitle": "\\b(engineer|engineering|electr|hardware|firmware|embedded|software|developer|technician|technical|scientist|research|silicon|systems|data|test|lab|r&d|design engineer|it support)\\b",
+  "fieldText": "\\b(engineering|engineer)\\b",
+  "degreeEvidence": "\\b(electrical|electronic|engineering)\\b.*\\b(degree|student|studying)\\b|\\b(degree|student|studying)\\b.*\\b(electrical|electronic|engineering)\\b",
+  "offField": {
+    "title": "software|cloud|data|frontend|backend|full.?stack|ios|android|web",
+    "unless": "hardware|embedded|firmware|electr|power|robot|semiconductor",
+    "text": "Mostly software, less linked to your Electrical & Electronic degree"
+  },
+  "relocate": "Yes",
+  "timeZone": "Europe/London",
+  "filters": {
+    "halal": true,
+    "blocklist": true
+  },
+  "keywords": [
+    "electrical electronics engineering intern",
+    "engineering internship",
+    "industrial placement"
+  ],
+  "jobTypes": [
+    "summer_internship",
+    "placement",
+    "part_time",
+    "temporary",
+    "research",
+    "graduate",
+    "insight_programme"
+  ]
+}
