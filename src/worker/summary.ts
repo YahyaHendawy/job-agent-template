@@ -50,11 +50,14 @@ export async function weeklyReport() {
     `✨ ${plural(found.strong, "new strong match", "new strong matches")}`,
     `✅ Weekly routine ${done} of 6 done`,
   ].filter(Boolean);
+  // The manager's top orders for next week
+  const { orders } = await import("@/lib/manager");
+  const top = (await orders()).slice(0, 3).map((o, i) => `${i + 1}. ${o.icon} ${o.title}`);
   await emit({
     type: "daily_summary", level: subm.n >= goal ? "success" : "info", importance: "important",
     title: subm.n >= goal ? "🏆 Weekly goal reached! Great work" : `📊 Your week: ${subm.n} of ${goal} applications sent`,
-    body: parts.join("\n") + (subm.n >= goal ? "\nNew week starts tomorrow." : `\n👉 ${plural(goal - subm.n, "more application")} hits your goal. Tap to see what's ready.`),
-    url: "/",
+    body: parts.join("\n") + `\n\n🎯 Next week's top orders:\n${top.join("\n")}\n👉 Tap for your full plan.`,
+    url: "/manager",
   });
 }
 

@@ -415,3 +415,21 @@ export async function toggleOnceItem(id: string) {
     [JSON.stringify({ done: done.includes(id) ? done.filter((x) => x !== id) : [...done, id] })]);
   revalidatePath("/todo");
 }
+
+/* ---------------- Career manager ---------------- */
+async function saveTracks(patch: (v: { month: string; done: string[]; learned: string[] }) => void) {
+  await requireUser();
+  const { tracksState } = await import("@/lib/manager");
+  const v = await tracksState();
+  patch(v);
+  await pool.query(`insert into settings (key, value, updated_at) values ('careerTracks', $1, now()) on conflict (key) do update set value = excluded.value, updated_at = now()`, [JSON.stringify(v)]);
+  revalidatePath("/manager");
+}
+/** Tick a monthly career move (resets each month). */
+export async function toggleMove(id: string) {
+  await saveTracks((v) => { v.done = v.done.includes(id) ? v.done.filter((x) => x !== id) : [...v.done, id]; });
+}
+/** "I've learned this" for a skill-gap item (remember to add it to the CV too). */
+export async function toggleLearned(key: string) {
+  await saveTracks((v) => { v.learned = v.learned.includes(key) ? v.learned.filter((x) => x !== key) : [...v.learned, key]; });
+}

@@ -7,6 +7,7 @@ import { timeAgo, Score, EligChip } from "@/components/ui";
 import { TodoList } from "@/components/TodoList";
 import { SearchBox } from "@/components/SearchBox";
 import { GoalCard } from "@/components/GoalCard";
+import { ManagerCard } from "@/components/ManagerCard";
 import { Donut, Bars, Progress, PALETTE } from "@/components/charts";
 import { CountUp } from "@/components/CountUp";
 
@@ -70,6 +71,8 @@ export default async function Home() {
         <p className="text-sm text-muted mt-2 min-h-5">{s.current_activity ?? (s.last_cycle_at ? `Idle — last search cycle ${timeAgo(s.last_cycle_at)}` : "Idle")}</p>
         <div className="mt-4"><ControlButtons status={s.status} emergency={s.emergency_stop} /></div>
       </section>
+
+      <ManagerCard />
 
       <TodoList max={3} />
 

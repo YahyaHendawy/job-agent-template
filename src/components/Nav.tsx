@@ -8,6 +8,7 @@ const TABS = [
   { href: "/applications", label: "Applications", d: "M7 3h7l5 5v12a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm6 1.5V9h4.5M8 13h8M8 17h6" },
   { href: "/todo", label: "Solo", d: "M9 4h6v3H9zM8 5.5H5.5V21h13V5.5H16M8.5 14l2.5 2.5 4.5-5" },
   { href: "/emails", label: "Emails", d: "M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zm0 1 8 6 8-6" },
+  { href: "/manager", label: "Manager", desktopOnly: true, d: "M12 3 4 7v5c0 4.5 3.4 8.4 8 9 4.6-.6 8-4.5 8-9V7zm-3 9 2 2 4-4" },
   { href: "/activity", label: "Activity", desktopOnly: true, d: "M3 12h4l3-8 4 16 3-8h4" },
   { href: "/settings", label: "Settings", d: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-2-1.2L14.5 3h-5l-.4 2.6a7.6 7.6 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 2 1.2l.4 2.6h5l.4-2.6a7.6 7.6 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z" },
 ];

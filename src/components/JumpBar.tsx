@@ -11,6 +11,7 @@ const DESTS: Dest[] = [
   { group: "Main", label: "💼 Jobs", href: "/jobs" },
   { group: "Main", label: "📄 Applications", href: "/applications" },
   { group: "Main", label: "✋ Solo (things only you can do)", href: "/todo", keywords: "to do todo checklist my part" },
+  { group: "Main", label: "🎯 Manager (career plan)", href: "/manager", keywords: "career coach orders skills season scorecard goat" },
   { group: "Main", label: "📧 Emails", href: "/emails" },
   { group: "Main", label: "📈 Activity log", href: "/activity" },
   { group: "Main", label: "⚙️ Settings", href: "/settings" },
@@ -40,6 +41,12 @@ const DESTS: Dest[] = [
   { group: "Solo", label: "➕ Log an application made elsewhere", href: "/todo#own", keywords: "linkedin easy apply fair" },
   { group: "Solo", label: "🧰 Accounts and alerts to set up", href: "/todo#setup" },
   { group: "Solo", label: "🚧 What I can't do", href: "/limits" },
+
+  { group: "Manager", label: "🎯 This week's orders", href: "/manager#orders" },
+  { group: "Manager", label: "📆 Hiring season", href: "/manager#season" },
+  { group: "Manager", label: "📊 Scorecard", href: "/manager#scorecard" },
+  { group: "Manager", label: "🧠 Skills employers want", href: "/manager#skills", keywords: "courses learn gap" },
+  { group: "Manager", label: "🛠️ Monthly career moves", href: "/manager#moves" },
 
   { group: "Emails", label: "❗ Emails that need you", href: "/emails?status=todo" },
   { group: "Emails", label: "🎤 Interview emails", href: "/emails?category=interview" },
