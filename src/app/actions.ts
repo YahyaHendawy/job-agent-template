@@ -273,7 +273,7 @@ export async function toggleWeeklyItem(id: string) {
   const { toggleWeekly } = await import("@/lib/guide");
   await toggleWeekly(id);
   revalidatePath("/");
-  revalidatePath("/guide");
+  revalidatePath("/todo");
 }
 
 /** The owner found a job themselves (LinkedIn, a company site…): add it and let the agent take over. */

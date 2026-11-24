@@ -12,7 +12,7 @@ const EMAIL_LABEL: Record<string, [string, string]> = {
 };
 
 /** Everything that needs the owner, newest/most urgent first, each with one button. Empty = nothing to do. */
-export async function TodoList() {
+export async function TodoList({ max, quickOnly = false }: { max?: number; quickOnly?: boolean } = {}) {
   await loadPersona();
   const [mail, ready, deadlines, det, autofill, inbox] = await Promise.all([
     pool.query(`select e.id, e.category, e.subject, e.from_name, e.link, e.received_at, j.employer, j.title
@@ -60,18 +60,23 @@ export async function TodoList() {
   if (!inbox.rowCount) items.push({ key: "inbox", icon: "📬", title: "Connect your job inbox", sub: "So interview invites and replies are never missed", href: "/settings/email", cta: "Connect" });
   if (!autofill.rows[0].n) items.push({ key: "autofill", icon: "🧩", title: "Connect Safari autofill on your Mac", href: "/settings/autofill", cta: "Set up" });
 
+  if (quickOnly) {
+    const quick = items.filter((i) => i.choices || ["details", "inbox", "autofill"].includes(i.key));
+    if (!quick.length) return null;
+    return <TodoCard title="Quick answers" note="One tap each; used on every form" items={quick} />;
+  }
+  const shown = max ? items.slice(0, max) : items;
   return (
     <section className="card p-4">
       <div className="flex items-baseline justify-between mb-2">
         <h2 className="font-bold text-lg">Needs you</h2>
-        <Link href="/todo" className="text-xs text-accent font-semibold ml-auto mr-2">Your part: everything →</Link>
         <span className="text-xs text-muted">{items.length ? `${items.length} item${items.length > 1 ? "s" : ""}` : ""}{deadlines.rows[0].n ? ` · ${deadlines.rows[0].n} deadline${deadlines.rows[0].n > 1 ? "s" : ""} in 3 days` : ""}</span>
       </div>
       {items.length === 0 ? (
         <p className="text-sm py-3" style={{ color: "var(--good)" }}>✓ All clear. Nothing needs you right now; the agent keeps working.</p>
       ) : (
         <ul className="divide-y divide-line">
-          {items.map((it) => (
+          {shown.map((it) => (
             <li key={it.key} className={`flex gap-3 py-2.5 ${it.choices ? "flex-wrap items-start" : "items-center"}`}>
               <span className="text-xl w-7 text-center shrink-0">{it.icon}</span>
               <div className={`min-w-0 ${it.choices ? "basis-[calc(100%-2.5rem)]" : "flex-1"}`}>
@@ -90,6 +95,25 @@ export async function TodoList() {
           ))}
         </ul>
       )}
+      {max && <Link href="/todo" className="btn btn-ghost w-full mt-2 !text-sm">{items.length > max ? `See all ${items.length} in Solo →` : "Open Solo →"}</Link>}
+    </section>
+  );
+}
+
+function TodoCard({ title, note, items }: { title: string; note: string; items: Item[] }) {
+  return (
+    <section className="card p-4">
+      <div className="flex items-baseline justify-between mb-1"><h2 className="font-bold">{title}</h2><span className="text-xs text-muted">{note}</span></div>
+      <ul className="divide-y divide-line">
+        {items.map((it) => (
+          <li key={it.key} className="flex gap-3 py-2.5 flex-wrap items-center">
+            <span className="text-xl w-7 text-center shrink-0">{it.icon}</span>
+            <div className="min-w-0 flex-1"><p className="font-semibold text-sm leading-snug">{it.title}</p>{it.sub && <p className="text-xs text-muted">{it.sub}</p>}</div>
+            {it.choices ? <div className="flex gap-1.5 ml-10">{it.choices.map((c) => <form key={c.label} action={c.action}><button className="btn btn-primary !py-1.5 !px-2.5 !text-xs">{c.label}</button></form>)}</div>
+              : it.href && <Link href={it.href} className="btn btn-primary !py-1.5 !px-3 !text-xs shrink-0">{it.cta}</Link>}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

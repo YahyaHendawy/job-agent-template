@@ -182,8 +182,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </div>
       </Section>
 
-      <a href="/guide" data-settings-item className="card p-4 flex items-center justify-between">
-        <div><p className="font-bold">Guide</p><p className="text-sm text-muted">Weekly routine, add jobs you find yourself, help at every stage</p></div>
+      <a href="/activity" data-settings-item className="card p-4 flex items-center justify-between">
+        <div><p className="font-bold">Activity log</p><p className="text-sm text-muted">Every action the agent has taken, with charts, search and filters</p></div>
         <span className="text-accent font-semibold">Open →</span>
       </a>
 

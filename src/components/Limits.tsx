@@ -12,12 +12,12 @@ export async function LimitsNote({ topic, max = 3 }: { topic: LimitTopic; max?: 
   const list = limits({ inbox: await inboxAddress() }).filter((l) => l.topics.includes(topic)).slice(0, max);
   if (!list.length) return null;
   return (
-    <aside className="rounded-xl p-3 text-xs space-y-1.5 border border-dashed border-line" aria-label="What the app can't do">
-      <p className="font-semibold text-muted">Remember, I can't do everything:</p>
-      <ul className="space-y-1">
+    <details className="rounded-xl px-3 py-2 text-xs border border-dashed border-line" aria-label="What the app can't do">
+      <summary className="font-semibold text-muted cursor-pointer select-none">ⓘ {list.length} thing{list.length > 1 ? "s" : ""} I can&apos;t do here</summary>
+      <ul className="space-y-1 mt-2">
         {list.map((l) => <li key={l.id}><span className="mr-1">{l.icon}</span><b>{l.title}.</b> <span className="text-muted">{l.instead}</span></li>)}
       </ul>
-      <span className="flex gap-3"><Link href="/todo" className="text-accent font-semibold inline-block">Your part: checklist →</Link><Link href="/limits" className="text-accent font-semibold inline-block">Everything I can't do →</Link></span>
-    </aside>
+      <span className="flex gap-3 mt-1.5"><Link href="/todo" className="text-accent font-semibold inline-block">Solo →</Link><Link href="/limits" className="text-accent font-semibold inline-block">Everything I can&apos;t do →</Link></span>
+    </details>
   );
 }

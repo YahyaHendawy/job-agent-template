@@ -23,7 +23,7 @@ export function limits(ctx: { inbox?: string | null } = {}): Limit[] {
     { id: "sites", icon: "🔍", top: true, topics: ["home", "jobs"],
       title: "I can't search every job site",
       detail: "LinkedIn, Indeed, student job boards and many big employers' own careers sites block automatic searching, so I never see their jobs.",
-      instead: "Do the 30-minute weekly checklist on Home and add anything good with “+ Add by link”.", href: "/guide" },
+      instead: "Do the 30-minute weekly check in Solo and add anything good with “+ Add by link”.", href: "/todo#sites" },
     { id: "tests", icon: "🎤", topics: ["home", "apply"],
       title: "I can't do online tests or interviews",
       detail: "Assessments, video interviews and real interviews are all you.",

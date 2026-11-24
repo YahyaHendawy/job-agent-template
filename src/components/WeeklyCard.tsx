@@ -12,7 +12,7 @@ export async function WeeklyCard({ compact = false }: { compact?: boolean }) {
   return (
     <section className="card p-4">
       <div className="flex items-baseline justify-between mb-1">
-        <h2 className="font-bold text-lg">This week</h2>
+        <h2 className="font-bold text-lg">Weekly job sites</h2>
         <span className="text-xs text-muted">{done}/{W.length} done · about 30 min</span>
       </div>
       <div className="h-1.5 rounded-full mb-3" style={{ background: "var(--surface-2)" }}>
@@ -35,7 +35,7 @@ export async function WeeklyCard({ compact = false }: { compact?: boolean }) {
                     {(compact ? w.links.slice(0, 2) : w.links).map((l) => (
                       <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className="chip !text-accent">{l.label} ↗</a>
                     ))}
-                    {compact && w.links.length > 2 && <Link href="/guide" className="chip">+{w.links.length - 2} more</Link>}
+                    {compact && w.links.length > 2 && <Link href="/todo#sites" className="chip">+{w.links.length - 2} more</Link>}
                   </div>
                 )}
               </div>
@@ -45,7 +45,7 @@ export async function WeeklyCard({ compact = false }: { compact?: boolean }) {
       </ul>
       <div className="flex gap-2 mt-4">
         <Link href="/jobs/new" className="btn btn-primary flex-1 !text-sm">Found a job? Add it by link</Link>
-        {compact && <Link href="/guide" className="btn btn-ghost !text-sm">Guide</Link>}
+        {compact && <Link href="/todo" className="btn btn-ghost !text-sm">Solo</Link>}
       </div>
     </section>
   );

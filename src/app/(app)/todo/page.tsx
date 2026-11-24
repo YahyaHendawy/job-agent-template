@@ -3,7 +3,10 @@ import { pool } from "@/db";
 import { PageHeader, fmtDate, timeAgo } from "@/components/ui";
 import { WeeklyCard } from "@/components/WeeklyCard";
 import { inboxAddress } from "@/components/Limits";
-import { loadPersona } from "@/lib/persona";
+import { loadPersona, isUkStudent } from "@/lib/persona";
+import { TodoList } from "@/components/TodoList";
+import { limits } from "@/lib/limits";
+import { stages as stageHelp } from "@/lib/guide";
 import { unanswered } from "@/lib/written";
 import { readNotes } from "@/lib/goahead";
 import { logOwnApplication, quickMarkSent, chaseLater, markNoReply, toggleOnceItem, markEmailHandled } from "@/app/actions";
@@ -43,6 +46,7 @@ export default async function YourPart({ searchParams }: { searchParams: Promise
     pool.query(`select count(*)::int n from api_tokens where revoked_at is null`),
   ]);
   const inbox = await inboxAddress();
+  const LIM = limits({ inbox });
   const d = det.rows[0]?.value ?? {};
   const doneOnce: string[] = once.rows[0]?.value?.done ?? [];
   const chaseNow = chase.rows.filter((a) => { const n = readNotes(a.notes); return !n.chaseAfter || Date.parse(n.chaseAfter) < Date.now(); });
@@ -77,7 +81,7 @@ export default async function YourPart({ searchParams }: { searchParams: Promise
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Your part" subtitle="Everything only you can do, in one place. Work top to bottom and nothing gets missed." right={<Link href="/limits" className="btn btn-ghost !text-sm">Why?</Link>} />
+      <PageHeader title="Solo" subtitle="Everything only you can do, in one place. Work top to bottom and nothing gets missed." />
 
       <section className="card p-4 gradient-hero">
         <p className="hud-label">Outstanding</p>
@@ -90,6 +94,8 @@ export default async function YourPart({ searchParams }: { searchParams: Promise
           ))}
         </div>
       </section>
+
+      <TodoList quickOnly />
 
       {/* 1. Send */}
       <Block id="send" icon="📨" title="Send these applications" n={going.rowCount ?? 0}
@@ -243,7 +249,25 @@ export default async function YourPart({ searchParams }: { searchParams: Promise
         </ul>
       </section>
 
-      <p className="text-xs text-muted text-center">Everything else (finding jobs, eligibility, tailored CVs, watching your inbox, reminders) runs by itself. <Link href="/limits" className="underline">What I can't do</Link></p>
+      {/* 9. Reference: folded so it's there but out of the way */}
+      <section className="card p-4 space-y-1">
+        <Fold title="🗓️ Every few months">
+          <ul className="space-y-1.5">
+            <li>• Update your CV file and LinkedIn with new projects or grades, then tell the app (<Link href="/settings/details" className="underline">Application details</Link>).</li>
+            <li>• Confirm {P.universityShort || "your university"}&apos;s exact vacation dates and whether a placement year is approved.</li>
+            {isUkStudent() && <li>• Check your visa conditions in your UKVI account before accepting any job.</li>}
+          </ul>
+        </Fold>
+        <Fold title="🧭 After you apply: what happens next">
+          <p className="mb-1.5">Each application moves stage by itself when the email arrives, and its page shows step-by-step help:</p>
+          <ul className="space-y-1">{Object.values(stageHelp()).map((s) => <li key={s.title}>• {s.title}</li>)}</ul>
+        </Fold>
+        <Fold title={`🚧 Everything I can't do (${LIM.length})`}>
+          <ul className="space-y-2">{LIM.map((l) => <li key={l.id}><b>{l.icon} {l.title}.</b> <span className="text-muted">{l.detail}</span><br /><span>👉 {l.instead}</span></li>)}</ul>
+        </Fold>
+      </section>
+
+      <p className="text-xs text-muted text-center">Everything else (finding jobs, eligibility, tailored CVs, watching your inbox, reminders) runs by itself.</p>
     </div>
   );
 }
@@ -271,4 +295,13 @@ function Block({ id, icon, title, n, hint, empty, more, children }: { id: string
 
 function Tick({ done, children }: { done: boolean; children: React.ReactNode }) {
   return <li className="flex gap-1.5"><span style={{ color: done ? "var(--good)" : "var(--muted)" }}>{done ? "✓" : "○"}</span><span className={done ? "text-muted" : ""}>{children}</span></li>;
+}
+
+function Fold({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details className="group py-1.5 border-b border-line last:border-0">
+      <summary className="font-semibold text-sm cursor-pointer select-none py-1">{title}</summary>
+      <div className="text-sm pt-1 pb-2">{children}</div>
+    </details>
+  );
 }

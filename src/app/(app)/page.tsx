@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LimitsNote } from "@/components/Limits";
 import { persona, countryName, loadPersona } from "@/lib/persona";
 import { pool } from "@/db";
 import { ControlButtons } from "@/components/ControlButtons";
@@ -7,7 +6,6 @@ import { LiveFeed } from "@/components/LiveFeed";
 import { timeAgo, Score, EligChip } from "@/components/ui";
 import { TodoList } from "@/components/TodoList";
 import { SearchBox } from "@/components/SearchBox";
-import { WeeklyCard } from "@/components/WeeklyCard";
 import { GoalCard } from "@/components/GoalCard";
 import { Donut, Bars, Progress, PALETTE } from "@/components/charts";
 import { CountUp } from "@/components/CountUp";
@@ -60,7 +58,7 @@ export default async function Home() {
         <h1 className="text-3xl font-black tracking-tight"><span className="aura-text">Greetings{who ? `, ${who}` : ""}.</span></h1>
       </header>
       <SearchBox action="/search" placeholder="Search jobs, applications, emails, activity…" />
-      <section className="card p-4 gradient-hero">
+      <section className="card p-4 gradient-hero" data-jump="Status">
         <div className="flex items-center gap-2">
           <span className="relative flex w-3 h-3">
             {label === "Running" && <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: color }} />}
@@ -73,12 +71,9 @@ export default async function Home() {
         <div className="mt-4"><ControlButtons status={s.status} emergency={s.emergency_stop} /></div>
       </section>
 
-      <TodoList />
+      <TodoList max={3} />
 
       <GoalCard />
-
-      <WeeklyCard compact />
-      <LimitsNote topic="home" max={4} />
 
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
@@ -93,8 +88,9 @@ export default async function Home() {
         ))}
       </section>
 
-      <section className="card p-4 space-y-4">
-        <h2 className="font-bold text-lg">Your progress</h2>
+      <details className="card p-4 group" data-jump="Progress">
+        <summary className="font-bold text-lg cursor-pointer select-none flex items-center justify-between">Your progress <span className="text-xs text-muted font-normal">charts · tap to {`open`}</span></summary>
+        <div className="space-y-4 mt-4">
         <div className="grid md:grid-cols-2 gap-5">
           <div>
             <p className="text-xs font-semibold text-muted mb-2">APPLICATIONS PIPELINE</p>
@@ -123,7 +119,8 @@ export default async function Home() {
           <p className="text-xs font-semibold text-muted mb-2">NEW JOBS FOUND — LAST 14 DAYS</p>
           <Bars data={days.rows} />
         </div>
-      </section>
+        </div>
+      </details>
 
 
       <section>

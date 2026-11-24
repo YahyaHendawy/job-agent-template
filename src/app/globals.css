@@ -168,3 +168,14 @@ a.card:hover { transform: translateY(-1px); border-color: rgba(255, 45, 70, .45)
 @media (prefers-reduced-motion: reduce) {
   .aura-bg span, .gradient-hero::after, .blink { animation: none !important; }
 }
+
+/* Jump bar: pinned under the iPhone status strip on every screen */
+:root { --jump-offset: calc(env(safe-area-inset-top) + 64px); }
+.jumpbar { position: sticky; top: env(safe-area-inset-top); z-index: 40; padding-top: .5rem; padding-bottom: .5rem;
+  background: rgba(5, 5, 6, .94); border-bottom: 1px solid rgba(255, 45, 70, .14); }
+.jumpbar .chip { font-size: .75rem; }
+.jump-on { color: #fff !important; background: rgba(225, 29, 46, .28) !important; border-color: rgba(255, 45, 70, .6) !important; box-shadow: 0 0 12px -2px rgba(225, 29, 46, .7); }
+.no-scrollbar { scrollbar-width: none; } .no-scrollbar::-webkit-scrollbar { display: none; }
+[data-jump-target], main section[id], main details[id] { scroll-margin-top: var(--jump-offset); }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
