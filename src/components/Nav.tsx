@@ -16,20 +16,20 @@ export function Nav({ approvals }: { approvals: number }) {
   const active = (h: string) => (h === "/" ? path === "/" : path.startsWith(h));
   return (
     <>
-      <aside className="hidden md:flex fixed inset-y-0 left-0 w-60 flex-col gap-1 border-r border-line bg-surface p-4">
-        <div className="px-2 pb-4 pt-1 text-lg font-bold tracking-tight">Job Agent</div>
+      <aside className="hidden md:flex fixed inset-y-0 left-0 w-60 flex-col gap-1 border-r border-line glass p-4">
+        <div className="px-2 pb-4 pt-1 text-lg font-extrabold tracking-tight"><span className="aura-text">Job Agent</span></div>
         {TABS.map((t) => (
           <Link key={t.href} href={t.href}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold ${active(t.href) ? "bg-surface-2 text-ink" : "text-muted hover:bg-surface-2"}`}>
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold ${active(t.href) ? "side-active" : "text-muted hover:bg-surface-2"}`}>
             <Icon d={t.d} />{t.label}
             {t.href === "/applications" && approvals > 0 && <span className="ml-auto chip" style={{ color: "var(--accent)" }}>{approvals}</span>}
           </Link>
         ))}
       </aside>
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-line bg-surface/95 backdrop-blur safe-bottom">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-line glass safe-bottom">
         <div className="grid grid-cols-6">
           {TABS.map((t) => (
-            <Link key={t.href} href={t.href} className={`relative flex flex-col items-center gap-0.5 pt-2 pb-1 text-[10.5px] font-semibold ${active(t.href) ? "text-accent" : "text-muted"}`}>
+            <Link key={t.href} href={t.href} className={`relative flex flex-col items-center gap-0.5 pt-2 pb-1 text-[10.5px] font-semibold ${active(t.href) ? "tab-active" : "text-muted"}`}>
               <Icon d={t.d} />{t.label}
               {t.href === "/applications" && approvals > 0 && (
                 <span className="absolute top-1 right-[22%] min-w-4 h-4 px-1 rounded-full bg-bad text-white text-[10px] grid place-items-center">{approvals}</span>

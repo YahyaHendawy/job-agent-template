@@ -56,7 +56,7 @@ export default async function Home() {
   return (
     <div className="space-y-4">
       <header className="pt-1">
-        <h1 className="text-2xl font-bold tracking-tight">Greetings{who ? `, ${who}` : ""} 👋</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight"><span className="aura-text">Greetings{who ? `, ${who}` : ""}</span> <span className="inline-block origin-[70%_70%] wave">👋</span></h1>
         <p className="text-sm text-muted">{today}</p>
       </header>
       <SearchBox action="/search" placeholder="Search jobs, applications, emails, activity…" />
@@ -64,7 +64,7 @@ export default async function Home() {
         <div className="flex items-center gap-2">
           <span className="relative flex w-3 h-3">
             {label === "Running" && <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: color }} />}
-            <span className="relative inline-flex w-3 h-3 rounded-full" style={{ background: color }} />
+            <span className="relative inline-flex w-3 h-3 rounded-full glow-dot" style={{ background: color, color }} />
           </span>
           <h1 className="text-xl font-bold">{label}</h1>
           <span className="ml-auto text-xs text-muted">last run {timeAgo(s.worker_heartbeat_at)}</span>

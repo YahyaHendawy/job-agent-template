@@ -15,22 +15,7 @@
   --color-bad: var(--bad);
 }
 
-:root {
-  --bg: #f5f6f8; --surface: #ffffff; --surface-2: #eef0f4; --line: #e2e5ea;
-  --ink: #12151a; --muted: #5d6573; --accent: #2457f5; --accent-ink: #ffffff;
-  --good: #12805c; --warn: #b86e00; --bad: #c8312b;
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0c0e12; --surface: #15181e; --surface-2: #1d2129; --line: #272c36;
-    --ink: #eef1f6; --muted: #98a1b0; --accent: #5b82ff; --accent-ink: #ffffff;
-    --good: #3fcf96; --warn: #f0a63a; --bad: #ff6b63;
-    color-scheme: dark;
-  }
-}
-
-html, body { background: var(--bg); color: var(--ink); }
+html, body { color: var(--ink); }
 body { -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
 .safe-bottom { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
 .safe-top { padding-top: env(safe-area-inset-top); }
@@ -69,3 +54,117 @@ a.card:active, .btn:active { transform: scale(.985); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ================= AURA THEME ================= */
+:root {
+  --bg: #f4f3ff; --surface: #ffffff; --surface-2: #f0eefc; --line: #e3e0f5;
+  --ink: #14121f; --muted: #5f5b78; --accent: #5b4cf0; --accent-ink: #ffffff;
+  --accent-2: #a855f7; --accent-3: #06b6d4;
+  --good: #0f8a62; --warn: #b86e00; --bad: #d23a4a;
+  --glass: color-mix(in srgb, var(--surface) 78%, transparent);
+  --glass-strong: color-mix(in srgb, var(--surface) 88%, transparent);
+  --edge: rgba(91, 76, 240, .10);
+  --shine: rgba(255, 255, 255, .7);
+  --glow: 0 8px 30px -8px rgba(91, 76, 240, .35);
+  --aura-1: rgba(124, 108, 255, .28); --aura-2: rgba(168, 85, 247, .20); --aura-3: rgba(6, 182, 212, .18);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #07070d; --surface: #12121c; --surface-2: #1b1a29; --line: #262438;
+    --ink: #f1efff; --muted: #a19dbd; --accent: #8b7bff; --accent-ink: #ffffff;
+    --accent-2: #c084fc; --accent-3: #22d3ee;
+    --good: #34d399; --warn: #fbbf24; --bad: #fb7185;
+    --glass: color-mix(in srgb, var(--surface) 70%, transparent);
+    --glass-strong: color-mix(in srgb, var(--surface) 82%, transparent);
+    --edge: rgba(255, 255, 255, .07);
+    --shine: rgba(255, 255, 255, .06);
+    --glow: 0 10px 40px -10px rgba(139, 123, 255, .55);
+    --aura-1: rgba(110, 92, 255, .30); --aura-2: rgba(192, 132, 252, .20); --aura-3: rgba(34, 211, 238, .16);
+    color-scheme: dark;
+  }
+}
+
+/* Drifting aurora behind everything (GPU transforms only; no filters, so it stays smooth on iPhone) */
+.aura-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--bg); }
+.aura-bg span { position: absolute; width: 90vmax; height: 90vmax; border-radius: 50%; will-change: transform; }
+.aura-bg span:nth-child(1) { top: -45vmax; left: -30vmax; background: radial-gradient(closest-side, var(--aura-1), transparent 70%); animation: aura-a 26s ease-in-out infinite alternate; }
+.aura-bg span:nth-child(2) { top: -30vmax; right: -40vmax; background: radial-gradient(closest-side, var(--aura-2), transparent 70%); animation: aura-b 32s ease-in-out infinite alternate; }
+.aura-bg span:nth-child(3) { bottom: -55vmax; left: -10vmax; background: radial-gradient(closest-side, var(--aura-3), transparent 70%); animation: aura-c 38s ease-in-out infinite alternate; }
+.aura-bg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 120%, transparent 40%, color-mix(in srgb, var(--bg) 60%, transparent)); }
+@keyframes aura-a { to { transform: translate3d(18vmax, 12vmax, 0) scale(1.15); } }
+@keyframes aura-b { to { transform: translate3d(-16vmax, 18vmax, 0) scale(.9); } }
+@keyframes aura-c { to { transform: translate3d(14vmax, -16vmax, 0) scale(1.1); } }
+html, body { background: transparent; }
+html { background: var(--bg); }
+
+/* Glass surfaces */
+.card {
+  background: var(--glass);
+  border: 1px solid var(--edge);
+  border-radius: 1.15rem;
+  box-shadow: inset 0 1px 0 var(--shine), 0 1px 2px rgba(0,0,0,.04), 0 12px 32px -18px rgba(20, 10, 60, .35);
+}
+a.card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 35%, var(--edge)); box-shadow: inset 0 1px 0 var(--shine), var(--glow); }
+.glass { background: var(--glass-strong); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); }
+
+/* Hero: glowing gradient rim */
+.gradient-hero {
+  position: relative; isolation: isolate;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 22%, var(--glass)) 0%, var(--glass) 55%, color-mix(in srgb, var(--accent-3) 12%, var(--glass)) 100%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%); backdrop-filter: blur(14px) saturate(150%);
+}
+.gradient-hero::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2), var(--accent-3), var(--accent));
+  background-size: 300% 300%; animation: rim 8s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: .75;
+}
+@keyframes rim { to { background-position: 300% 0; } }
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: var(--accent-ink); box-shadow: var(--glow); position: relative; overflow: hidden;
+}
+.btn-primary::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-120%);
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%);
+}
+.btn-primary:hover::after { transform: translateX(120%); transition: transform .7s ease; }
+.btn-ghost { background: color-mix(in srgb, var(--surface-2) 85%, transparent); border: 1px solid var(--edge); }
+.btn-danger { background: linear-gradient(135deg, #f43f5e, #e11d48); box-shadow: 0 8px 26px -10px rgba(244, 63, 94, .6); }
+
+/* Inputs, chips, focus */
+.input { background: color-mix(in srgb, var(--surface) 85%, transparent); border-color: var(--edge); }
+.input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
+.chip { background: color-mix(in srgb, var(--surface-2) 80%, transparent); border-color: var(--edge); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+
+/* Gradient, shimmering headline text */
+.aura-text {
+  background: linear-gradient(100deg, var(--ink) 0%, var(--accent) 35%, var(--accent-2) 55%, var(--accent-3) 75%, var(--ink) 100%);
+  background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shimmer 9s ease-in-out infinite alternate;
+}
+@keyframes shimmer { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+
+/* Glowing status dot and active tab */
+.glow-dot { box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent), 0 0 14px currentColor; }
+.tab-active { color: var(--accent); }
+.tab-active::before {
+  content: ""; position: absolute; top: 0; left: 28%; right: 28%; height: 3px; border-radius: 0 0 6px 6px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-3)); box-shadow: 0 0 12px var(--accent);
+}
+.side-active { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent); color: var(--ink); box-shadow: inset 2px 0 0 var(--accent); }
+
+/* Thin, tinted scrollbars on desktop */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--accent) 35%, transparent) transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  .aura-bg span, .gradient-hero::before, .aura-text { animation: none !important; }
+}
+/* little wave on the greeting, once */
+@keyframes wave { 0%,60%,100% { transform: rotate(0); } 10%,30% { transform: rotate(14deg); } 20% { transform: rotate(-8deg); } 40% { transform: rotate(-4deg); } 50% { transform: rotate(10deg); } }
+.wave { animation: wave 1.8s ease-in-out .4s 1 both; }

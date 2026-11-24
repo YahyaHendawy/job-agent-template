@@ -15,8 +15,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f6f8" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c0e12" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f3ff" },
+    { media: "(prefers-color-scheme: dark)", color: "#07070d" },
   ],
 };
 
@@ -44,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-GB">
       <body className="min-h-dvh font-sans">
+        <div className="aura-bg" aria-hidden><span /><span /><span /></div>
         {NEEDS_DB ? <ConnectDatabase /> : children}
         <script
           dangerouslySetInnerHTML={{
