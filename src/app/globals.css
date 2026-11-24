@@ -21,7 +21,10 @@ body { -webkit-font-smoothing: antialiased; }
 /* Fixed bars get their own layer so they never move while the page scrolls */
 .pin-bottom { position: fixed; left: 0; right: 0; bottom: 0; transform: translate3d(0, 0, 0); -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .safe-bottom { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
-.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-top { padding-top: calc(env(safe-area-inset-top) + 1.5rem) !important; }
+/* Solid strip behind the iPhone clock/battery so nothing scrolls (blurred) underneath it */
+.status-cover { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: #050506; z-index: 60; pointer-events: none;
+  box-shadow: 0 1px 0 rgba(255, 45, 70, .18); transform: translate3d(0, 0, 0); }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border-radius: .75rem; padding: .55rem .9rem; font-weight: 600; font-size: .9rem; transition: opacity .15s, transform .05s; }
 .btn:active { transform: scale(.98); }
@@ -76,8 +79,8 @@ a.card:active, .btn:active { transform: scale(.985); }
 /* Reactor glow, targeting grid, scanlines and vignette behind everything */
 .aura-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--bg); }
 .aura-bg span { position: absolute; border-radius: 50%; will-change: transform, opacity; }
-.aura-bg span:nth-child(1) { width: 110vmax; height: 110vmax; left: 50%; top: -70vmax; margin-left: -55vmax;
-  background: radial-gradient(closest-side, rgba(180, 10, 30, .22), rgba(120, 0, 20, .08) 45%, transparent 72%); animation: reactor 7s ease-in-out infinite; }
+.aura-bg span:nth-child(1) { width: 110vmax; height: 110vmax; left: 50%; top: 10vh; margin-left: -55vmax;
+  background: radial-gradient(closest-side, rgba(180, 10, 30, .12), rgba(120, 0, 20, .04) 45%, transparent 70%); animation: reactor 7s ease-in-out infinite; }
 .aura-bg span:nth-child(2) { width: 70vmax; height: 70vmax; right: -35vmax; bottom: -40vmax;
   background: radial-gradient(closest-side, rgba(255, 80, 20, .12), transparent 70%); animation: ember 30s ease-in-out infinite alternate; }
 .aura-bg span:nth-child(3) { width: 60vmax; height: 60vmax; left: -30vmax; top: 40vh;
@@ -87,7 +90,7 @@ a.card:active, .btn:active { transform: scale(.985); }
   background-size: 44px 44px;
   -webkit-mask-image: radial-gradient(ellipse at 50% 20%, #000 10%, transparent 70%); mask-image: radial-gradient(ellipse at 50% 20%, #000 10%, transparent 70%); }
 .aura-bg::after { content: ""; position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .018) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(0, 0, 0, .75)); }
+  background: radial-gradient(ellipse at 50% 40%, transparent 45%, rgba(0, 0, 0, .75)); }
 @keyframes reactor { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
 @keyframes ember { to { transform: translate3d(-12vmax, -10vmax, 0) scale(1.15); } }
 html, body { background: transparent; }

@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <AppSync vapidKey={vapidKeys()?.publicKey ?? null} />
       <OfflineSync />
       <CompareBar />
-      <main className="mx-auto max-w-4xl px-4 pt-5 pb-28 md:pb-10 safe-top">{children}</main>
+      <main className="mx-auto max-w-4xl px-4 pb-28 md:pb-10 safe-top">{children}</main>
     </div>
   );
 }

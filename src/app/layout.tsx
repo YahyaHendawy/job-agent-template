@@ -45,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-GB">
       <body className="min-h-dvh font-sans">
         <div className="aura-bg" aria-hidden><span /><span /><span /></div>
+        <div className="status-cover" aria-hidden />
         {NEEDS_DB ? <ConnectDatabase /> : children}
         <script
           dangerouslySetInnerHTML={{
