@@ -161,7 +161,7 @@ a.card:hover { transform: translateY(-1px); border-color: rgba(255, 45, 70, .45)
   content: ""; position: absolute; top: 0; left: 26%; right: 26%; height: 2px;
   background: #ff2a3d; box-shadow: 0 0 10px 1px rgba(255, 42, 61, .9);
 }
-.side-active { background: linear-gradient(90deg, rgba(225, 29, 46, .22), transparent); color: #fff; box-shadow: inset 2px 0 0 #ff2a3d; }
+.side-active { background: linear-gradient(90deg, rgba(225, 29, 46, .22), transparent); color: var(--ink); box-shadow: inset 2px 0 0 #ff2a3d; }
 
 * { scrollbar-width: thin; scrollbar-color: rgba(225, 29, 46, .45) transparent; }
 
@@ -174,7 +174,7 @@ a.card:hover { transform: translateY(-1px); border-color: rgba(255, 45, 70, .45)
 .jumpbar { position: sticky; top: env(safe-area-inset-top); z-index: 40; padding-top: .5rem; padding-bottom: .5rem;
   background: rgba(5, 5, 6, .94); border-bottom: 1px solid rgba(255, 45, 70, .14); }
 .jumpbar .chip { font-size: .75rem; }
-.jump-on { color: #fff !important; background: rgba(225, 29, 46, .28) !important; border-color: rgba(255, 45, 70, .6) !important; box-shadow: 0 0 12px -2px rgba(225, 29, 46, .7); }
+.jump-on { color: var(--ink) !important; background: rgba(225, 29, 46, .28) !important; border-color: rgba(255, 45, 70, .6) !important; box-shadow: 0 0 12px -2px rgba(225, 29, 46, .7); }
 .no-scrollbar { scrollbar-width: none; } .no-scrollbar::-webkit-scrollbar { display: none; }
 [data-jump-target], main section[id], main details[id] { scroll-margin-top: var(--jump-offset); }
 html { scroll-behavior: smooth; }

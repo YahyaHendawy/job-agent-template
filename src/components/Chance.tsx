@@ -6,7 +6,9 @@ export function ChanceChip({ c }: { c: Chance }) {
 }
 
 /** Full view: estimate, gauge, why you could and why you couldn't get accepted. */
-export function ChanceView({ c, compact = false }: { c: Chance; compact?: boolean }) {
+export function ChanceView({ c, compact = false, base }: { c: Chance; compact?: boolean; base?: string | null }) {
+  // On a job page, "#answers" etc. live on the application; with no application yet, those links are hidden
+  const link = (h?: string) => (!h ? null : !h.startsWith("#") || base === undefined ? h : base ? `${base}${h}` : null);
   const col = chanceColor(c.tone);
   const could = compact ? c.could.slice(0, 2) : c.could;
   const couldnt = compact ? c.couldnt.slice(0, 2) : c.couldnt;
@@ -42,7 +44,7 @@ export function ChanceView({ c, compact = false }: { c: Chance; compact?: boolea
             {c.improve.map((x, i) => (
               <li key={i} className="flex gap-2">
                 <span className="w-5 h-5 rounded-full grid place-items-center text-[11px] font-bold shrink-0" style={{ background: "var(--good)", color: "#fff" }}>{i + 1}</span>
-                <span className="flex-1">{x.text}{x.href && <> <a href={x.href} className="text-accent font-semibold whitespace-nowrap">Do it →</a></>}</span>
+                <span className="flex-1">{x.text}{link(x.href) && <> <a href={link(x.href)!} className="text-accent font-semibold whitespace-nowrap">Do it →</a></>}</span>
                 <span className="text-xs text-muted tabular-nums shrink-0">+{Math.round((x.gain - 1) * 100)}%</span>
               </li>
             ))}

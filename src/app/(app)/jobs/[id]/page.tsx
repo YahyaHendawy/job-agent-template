@@ -61,7 +61,7 @@ export default async function Job({ params }: { params: Promise<{ id: string }> 
 
       <section className="card p-4">
         <h2 className="font-bold mb-3">Chance of getting it</h2>
-        <div className="space-y-3"><ApplicantsCounter m={applicantsModel(j)} /><ChanceView c={chance({ ...j, status: j.app_status, missing_info: j.missing_evidence })} /></div>
+        <div className="space-y-3"><ApplicantsCounter m={applicantsModel(j)} /><ChanceView c={chance({ ...j, status: j.app_status, missing_info: j.missing_evidence })} base={j.app_id ? `/applications/${j.app_id}` : null} /></div>
       </section>
 
       <section className="card p-4">

@@ -37,8 +37,17 @@ export const SKILLS: Skill[] = [
 
 export type GapRow = { key: string; label: string; jobs: number; pct: number; have: boolean; learn: Skill["learn"] };
 
-/** What employers in your open, suitable jobs ask for most, and which of those aren't on your CV yet. */
+/** What employers in your open, suitable jobs ask for most, and which of those aren't on your CV yet.
+ *  Cached for 6 hours (it reads hundreds of job adverts); ticking a skill as learned clears the cache. */
 export async function skillGap(): Promise<{ rows: GapRow[]; sample: number }> {
+  const c = (await pool.query(`select value from settings where key = 'skillGapCache' and updated_at > now() - interval '6 hours'`)).rows[0]?.value;
+  if (c?.rows) return { rows: c.rows.map((g: GapRow) => ({ ...g, learn: SKILLS.find((s) => s.key === g.key)?.learn ?? g.learn })), sample: c.sample };
+  const fresh = await computeSkillGap();
+  await pool.query(`insert into settings (key, value, updated_at) values ('skillGapCache', $1, now()) on conflict (key) do update set value = excluded.value, updated_at = now()`, [JSON.stringify(fresh)]);
+  return fresh;
+}
+
+async function computeSkillGap(): Promise<{ rows: GapRow[]; sample: number }> {
   const r = await pool.query(`select coalesce(title,'') || ' ' || coalesce(description,'') t from jobs
      where listing_status = 'open' and not dismissed and eligibility <> 'ineligible' and match_score >= 40 order by match_score desc limit 400`);
   const p = await getProfile();
@@ -89,7 +98,7 @@ export async function scorecard() {
       count(*) filter (where status in ('assessment','interview','offer'))::int progressed,
       count(*) filter (where status in ('interview','offer'))::int interviews,
       count(*) filter (where status = 'offer')::int offers,
-      count(*) filter (where status = 'rejected')::int rejected,
+      count(*) filter (where status = 'rejected' and coalesce(notes, '') not like '%"noReply"%')::int rejected,
       count(*) filter (where submitted_at > now() - interval '7 days')::int sent7,
       count(*) filter (where submitted_at > now() - interval '28 days')::int sent28
     from applications`)).rows[0];
@@ -113,7 +122,8 @@ export async function orders(): Promise<Order[]> {
               (select count(*)::int from applications where status = 'offer') offer,
               (select count(*)::int from applications where submitted_at > date_trunc('week', now())) sent_week,
               (select count(*)::int from applications where status = 'submitted' and submitted_at < now() - interval '14 days'
-                 and not exists (select 1 from emails e where e.application_id = applications.id and e.received_at > applications.submitted_at)) chase`),
+                 and not exists (select 1 from emails e where e.application_id = applications.id and e.received_at > applications.submitted_at and e.category <> 'received')
+                 and coalesce(substring(applications.notes from '"chaseAfter":"([^"]+)"'), '1970-01-01')::timestamptz < now()) chase`),
     q(`select a.id, j.employer from applications a join jobs j on j.id = a.job_id where a.status = 'awaiting_approval' and j.deadline between now() and now() + interval '4 days' order by j.deadline limit 3`),
     q(`select a.id, j.employer from applications a join jobs j on j.id = a.job_id where a.status = 'approved' and j.deadline between now() and now() + interval '4 days' order by j.deadline limit 3`),
     q(`select value from settings where key = 'goals'`),

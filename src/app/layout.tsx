@@ -45,7 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const look = NEEDS_DB ? DEFAULT_APPEARANCE : await getAppearance();
   const css = appearanceCss(look);
   return (
-    <html lang="en-GB">
+    <html lang="en-GB" data-scroll-behavior="smooth">
       <body className="min-h-dvh font-sans">
         {/* Saved look from Settings → Appearance (always present so the live preview can update it) */}
         <style id="appearance" dangerouslySetInnerHTML={{ __html: css }} />

@@ -6,6 +6,28 @@ import { saveAppearance } from "@/app/actions";
 
 type Opt<T extends string> = [T, string];
 
+/* Module-level helpers: defined outside the form so inputs keep focus while you type. */
+function Seg({ value, onPick, opts }: { value: string; onPick: (v: string) => void; opts: Opt<string>[] }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {opts.map(([v, l]) => (
+        <button key={v} type="button" onClick={() => onPick(v)} className={`chip !py-1.5 ${value === v ? "jump-on" : ""}`} aria-pressed={value === v}>{l}</button>
+      ))}
+    </div>
+  );
+}
+function Toggle({ on, onChange, label, sub }: { on: boolean; onChange: (v: boolean) => void; label: string; sub?: string }) {
+  return (
+    <label className="flex items-center gap-3 py-2 cursor-pointer">
+      <span className="flex-1 min-w-0"><span className="text-sm font-semibold block">{label}</span>{sub && <span className="text-xs text-muted">{sub}</span>}</span>
+      <input type="checkbox" checked={on} onChange={(e) => onChange(e.target.checked)} className="w-5 h-5 accent-[var(--accent)]" />
+    </label>
+  );
+}
+function Block({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="card p-4 space-y-3"><h2 className="font-bold">{title}</h2>{children}</section>;
+}
+
 /** Every look-and-feel choice, previewed live on this screen as you change it; Save applies it everywhere. */
 export function AppearanceForm({ initial }: { initial: Appearance }) {
   const [a, setA] = useState<Appearance>(initial);
@@ -27,22 +49,6 @@ export function AppearanceForm({ initial }: { initial: Appearance }) {
   const save = () => start(async () => { await saveAppearance(JSON.stringify(a)); kept.current = a; setSaved(true); router.refresh(); });
   const reset = () => { setA(DEFAULT_APPEARANCE); setSaved(false); };
 
-  const Seg = <T extends string>({ k, opts }: { k: keyof Appearance; opts: Opt<T>[] }) => (
-    <div className="flex flex-wrap gap-1.5">
-      {opts.map(([v, l]) => (
-        <button key={v} type="button" onClick={() => set(k, v as never)} className={`chip !py-1.5 ${a[k] === v ? "jump-on" : ""}`} aria-pressed={a[k] === v}>{l}</button>
-      ))}
-    </div>
-  );
-  const Toggle = ({ on, onChange, label, sub }: { on: boolean; onChange: (v: boolean) => void; label: string; sub?: string }) => (
-    <label className="flex items-center gap-3 py-2 cursor-pointer">
-      <span className="flex-1 min-w-0"><span className="text-sm font-semibold block">{label}</span>{sub && <span className="text-xs text-muted">{sub}</span>}</span>
-      <input type="checkbox" checked={on} onChange={(e) => onChange(e.target.checked)} className="w-5 h-5 accent-[var(--accent)]" />
-    </label>
-  );
-  const Block = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <section className="card p-4 space-y-3"><h2 className="font-bold">{title}</h2>{children}</section>
-  );
   const HOME: [keyof Appearance["home"], string][] = [["search", "Search box"], ["status", "Agent status panel"], ["manager", "Your manager"], ["needs", "Needs you"], ["goal", "Weekly goal"], ["tiles", "Number tiles"], ["progress", "Progress charts"], ["matches", "Top matches"], ["activity", "Recent activity"]];
 
   return (
@@ -66,19 +72,19 @@ export function AppearanceForm({ initial }: { initial: Appearance }) {
 
       <Block title="Text and shape">
         <p className="text-xs text-muted">Font</p>
-        <Seg k="font" opts={[["system", "Standard"], ["rounded", "Rounded"], ["mono", "Terminal"], ["serif", "Serif"]]} />
+        <Seg value={a.font} onPick={(v) => set("font", v as never)} opts={[["system", "Standard"], ["rounded", "Rounded"], ["mono", "Terminal"], ["serif", "Serif"]]} />
         <p className="text-xs text-muted">Text size</p>
-        <Seg k="textSize" opts={[["s", "Small"], ["m", "Normal"], ["l", "Large"], ["xl", "Extra large"]]} />
+        <Seg value={a.textSize} onPick={(v) => set("textSize", v as never)} opts={[["s", "Small"], ["m", "Normal"], ["l", "Large"], ["xl", "Extra large"]]} />
         <p className="text-xs text-muted">Corners</p>
-        <Seg k="corners" opts={[["sharp", "Sharp"], ["normal", "Normal"], ["round", "Round"]]} />
+        <Seg value={a.corners} onPick={(v) => set("corners", v as never)} opts={[["sharp", "Sharp"], ["normal", "Normal"], ["round", "Round"]]} />
         <p className="text-xs text-muted">Cards</p>
-        <Seg k="cards" opts={[["glass", "Glass"], ["solid", "Solid"], ["outline", "Outline only"]]} />
+        <Seg value={a.cards} onPick={(v) => set("cards", v as never)} opts={[["glass", "Glass"], ["solid", "Solid"], ["outline", "Outline only"]]} />
         <Toggle on={a.hudHeadings} onChange={(v) => set("hudHeadings", v)} label="Terminal-style section headings" sub="Spaced capitals in a computer font" />
       </Block>
 
       <Block title="Effects and motion">
         <p className="text-xs text-muted">Motion</p>
-        <Seg k="motion" opts={[["full", "Full"], ["calm", "Calm"], ["off", "Off"]]} />
+        <Seg value={a.motion} onPick={(v) => set("motion", v as never)} opts={[["full", "Full"], ["calm", "Calm"], ["off", "Off"]]} />
         <div className="divide-y divide-line">
           <Toggle on={a.glow} onChange={(v) => set("glow", v)} label="Background glow" />
           <Toggle on={a.grid} onChange={(v) => set("grid", v)} label="Background grid" />

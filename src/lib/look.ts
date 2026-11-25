@@ -46,9 +46,11 @@ export function appearanceCss(a: Appearance): string {
   const accent = hex(a.accent) ?? t.accent;
   const css: string[] = [];
   const recolour = a.theme !== "command" || !!hex(a.accent);
+  const rgb = parseInt(accent.slice(1), 16);
+  const btnInk = (299 * (rgb >> 16) + 587 * ((rgb >> 8) & 255) + 114 * (rgb & 255)) / 1000 > 150 ? "#111" : "#fff";
   if (recolour) {
     css.push(`:root,:root[data-theme]{--accent:${accent};--accent-2:${t.accent2};--glow:0 0 0 1px color-mix(in srgb,${accent} 35%,transparent),0 10px 36px -10px color-mix(in srgb,${accent} 55%,transparent);--edge:color-mix(in srgb,${accent} 14%,transparent)}
-.btn-primary{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 88%,#fff),color-mix(in srgb,var(--accent) 72%,#000));border-color:color-mix(in srgb,var(--accent) 55%,#fff);color:${a.theme === "mono" || a.theme === "gold" ? "#111" : "#fff"}}
+.btn-primary{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 88%,#fff),color-mix(in srgb,var(--accent) 72%,#000));border-color:color-mix(in srgb,var(--accent) 55%,#fff);color:${btnInk}}
 .tab-active{color:var(--accent);text-shadow:0 0 12px color-mix(in srgb,var(--accent) 70%,transparent)}
 .tab-active::before{background:var(--accent);box-shadow:0 0 10px 1px color-mix(in srgb,var(--accent) 90%,transparent)}
 .side-active{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 22%,transparent),transparent);box-shadow:inset 2px 0 0 var(--accent)}
@@ -63,17 +65,17 @@ export function appearanceCss(a: Appearance): string {
   }
   if (!t.dark) {
     css.push(`:root,:root[data-theme]{--bg:#f3f4f6;--surface:#ffffff;--surface-2:#eef0f3;--line:#dde0e6;--ink:#111318;--muted:#5b616e;--glass:rgba(255,255,255,.88);--glass-strong:rgba(255,255,255,.94);--shine:rgba(255,255,255,.8);--good:#0f8a62;--warn:#b86e00;--bad:#d23a4a;color-scheme:light}
-html,.status-cover{background:var(--bg)} .jumpbar{background:rgba(243,244,246,.94)} .aura-bg::after{background:none}
+html{background:var(--bg)} .status-cover{background:#111318} .jumpbar{background:rgba(243,244,246,.94)} .aura-bg::after{background:none}
 .card{box-shadow:0 1px 2px rgba(0,0,0,.05),0 10px 30px -20px rgba(0,0,0,.25)} .btn-ghost,.chip{background:#fff;border-color:var(--line)} .input{background:#fff}
 .jm-tiles{filter:none} .leaflet-bar a{background:#fff!important;color:#111!important;border-color:#ddd!important}`);
   }
   const font = { system: "", rounded: `ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif`, mono: `ui-monospace,"SF Mono",Menlo,monospace`, serif: `ui-serif,"New York",Georgia,serif` }[a.font];
   if (font) css.push(`:root{--font-sans:${font}} body{font-family:${font}}`);
   const size = { s: "15px", m: "", l: "17.5px", xl: "19px" }[a.textSize];
-  if (size) css.push(`html{font-size:${size}}`);
+  if (size) css.push(`html{font-size:${size}}${a.textSize === "s" ? " .input{font-size:16px}" : ""}`);
   if (a.corners !== "normal") { const r = a.corners === "sharp" ? ".2rem" : "1.4rem"; css.push(`.card{border-radius:${r}} .btn,.input{border-radius:${a.corners === "sharp" ? ".2rem" : "1rem"}} .chip{border-radius:${a.corners === "sharp" ? ".2rem" : "999px"}}`); }
   if (a.cards === "solid") css.push(`.card{background:var(--surface)}`);
-  if (a.cards === "outline") css.push(`.card{background:transparent;box-shadow:none}`);
+  if (a.cards === "outline") css.push(`.card:not(.fixed){background:transparent;box-shadow:none}`);
   if (!a.glow) css.push(`.aura-bg span{display:none}`);
   if (!a.grid) css.push(`.aura-bg::before{display:none}`);
   if (!a.scanner) css.push(`.gradient-hero::before,.gradient-hero::after{display:none}`);

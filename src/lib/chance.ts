@@ -76,7 +76,8 @@ export function chance(j: ChanceInput): Chance {
   const posted = days(j.discovered_at), dl = days(j.deadline);
   if (posted != null && posted > -7) { pct *= 1.15; could.push("Found within the last week: many employers review as applications arrive, so early helps"); }
   else if (posted != null && posted < -35) { pct *= 0.85; couldnt.push("Advertised over a month ago: it may already have many applicants or be close to filled"); }
-  if (dl != null && dl < 0) { pct = 0; couldnt.unshift("The deadline has passed"); }
+  const sent = ["submitting", "submitted", "assessment", "interview", "offer"].includes(j.status ?? "");
+  if (dl != null && dl < 0 && !sent) { pct = 0; couldnt.unshift("The deadline has passed"); }
   else if (dl != null && dl <= 3) couldnt.push("Closes in a few days: a rushed application is weaker");
 
   // Your effort
@@ -96,7 +97,7 @@ export function chance(j: ChanceInput): Chance {
 
   // What you can do about it, biggest effect first (gain = multiplier on your chance)
   const imp: Improve[] = [];
-  const open = !["offer", "rejected", "withdrawn", "declined"].includes(j.status ?? "") && !(dl != null && dl < 0);
+  const open = !["offer", "rejected", "withdrawn", "declined"].includes(j.status ?? "") && !(dl != null && dl < 0 && !sent);
   if (open) {
     if (j.status === "assessment") imp.push({ text: "Do 2–3 free practice tests of the same type first, and take the real one a day early in a quiet room", gain: 1.5, href: "#stage-help" });
     else if (j.status === "interview") imp.push({ text: "Prepare 4–5 STAR stories from your projects, research them for 15 minutes, practise out loud and send a thank-you email after", gain: 1.4, href: "#stage-help" });
@@ -107,7 +108,7 @@ export function chance(j: ChanceInput): Chance {
       if (j.source_kind && !AGG.includes(j.source_kind)) imp.push({ text: "Stand out from the crowd: email the recruiter if a contact is published, or send a short LinkedIn message after applying", gain: 1.1, href: "#recruiter" });
       if (["summer_internship", "placement"].includes(j.category ?? "")) imp.push({ text: "Point to one hands-on project with photos or a GitHub link: it's what separates students without experience", gain: 1.15, href: "/manager#moves" });
       if (j.eligibility !== "eligible") imp.push({ text: isUkStudent() ? "Check your visa fit with your university now, and state clearly on the form that the role fits your Student visa" : "Check the eligibility point now and state your situation clearly on the form", gain: 1.15 });
-      if (!["submitted", "submitting"].includes(j.status ?? "")) imp.push({ text: dl != null && dl <= 7 ? "Send it today: it closes soon" : "Apply this week: many employers read applications as they arrive and close early", gain: 1.15, href: "/todo#send" });
+      if (!sent) imp.push({ text: dl != null && dl <= 7 ? "Send it today: it closes soon" : "Apply this week: many employers read applications as they arrive and close early", gain: 1.15, href: "/todo#send" });
     }
   }
   imp.sort((a, b) => b.gain - a.gain);
@@ -120,5 +121,12 @@ export function chance(j: ChanceInput): Chance {
   const potential = pct === 0 || pct === 100 ? pct : Math.min(85, potRaw < 10 ? Math.round(potRaw) : Math.round(potRaw / 5) * 5);
   return { pct, label, tone, could: [...new Set(could)].slice(0, 5), couldnt: [...new Set(couldnt)].slice(0, 5), basis, stage, improve: imp.slice(0, 5), potential };
 }
+
+/** For lists that don't need the whole advert: the phrases chance() looks for, found in the database (saves bandwidth). */
+export const CHANCE_FLAGS_SQL = `concat_ws(' ',
+  case when j.description ~* 'no (previous |prior )?experience (is )?(required|needed)|experience (is )?not required|no experience necessary' then 'no experience necessary' end,
+  case when j.description ~* '(unable|not able|cannot|can''t) (to )?sponsor|without (requiring )?(visa )?sponsorship|right to work .{0,40}(full|entire|whole) (duration|length)' then 'unable to sponsor' end,
+  case when j.description ~* 'penultimate' then 'penultimate' end,
+  case when j.description ~* 'final[- ]year students only|graduat(ing|e) in 20[0-9][0-9] only' then 'final-year students only' end)`;
 
 export const chanceColor = (t: Chance["tone"]) => (t === "good" ? "var(--good)" : t === "ok" ? "var(--accent)" : t === "warn" ? "var(--warn)" : "var(--bad)");

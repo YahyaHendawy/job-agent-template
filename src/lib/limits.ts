@@ -4,7 +4,7 @@
  */
 import { persona, isUkStudent } from "@/lib/persona";
 
-export type LimitTopic = "home" | "apply" | "jobs" | "emails" | "compare" | "notifications" | "visa";
+export type LimitTopic = "home" | "apply" | "jobs" | "emails" | "compare" | "notifications" | "visa" | "map";
 export type Limit = { id: string; icon: string; title: string; detail: string; instead: string; href?: string; topics: LimitTopic[]; top?: boolean };
 
 export function limits(ctx: { inbox?: string | null } = {}): Limit[] {
@@ -40,6 +40,18 @@ export function limits(ctx: { inbox?: string | null } = {}): Limit[] {
       title: "Matching and filters work on keywords",
       detail: "Scores, the halal filter and the block list read titles, employers and advert text. They can miss something or flag something wrongly, and anything the advert doesn't say (pay, dates) shows as “Not stated”.",
       instead: "Read the full advert before saying yes, especially ☪️ and ⚠️ items." },
+    { id: "estimates", icon: "📐", topics: ["apply", "compare"],
+      title: "Chances, applicant numbers and places are estimates",
+      detail: "Employers don't publish acceptance rates, how many people applied, or (unless the advert says) how many places there are. I estimate them from the type of role, the employer, timing and your CV.",
+      instead: "Use them to compare and prioritise, and follow the “How to improve your chances” steps on each application." },
+    { id: "contacts", icon: "✉️", topics: ["apply", "emails"],
+      title: "I can only email recruiters whose address is published",
+      detail: "I use addresses written in the advert or from people at the employer who've emailed you. I never guess an address, and nothing is sent until you tap Send.",
+      instead: "No address? Use the LinkedIn link on the application to message their recruiters." },
+    { id: "map", icon: "🗺️", topics: ["map"],
+      title: "Map pins can be approximate",
+      detail: "Adverts often give only a city or area, so the pin sits at its centre (≈ when only the country or region is known). Remote jobs aren't on the map, and the map needs internet.",
+      instead: "Check the exact address in the advert before planning travel." },
     { id: "iphone", icon: "📱", topics: ["apply"],
       title: "Autofill only works in Safari on your Mac",
       detail: "On iPhone I can't fill forms. Some sites (for example Workday) block it even on the Mac.",

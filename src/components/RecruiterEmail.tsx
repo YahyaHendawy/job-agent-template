@@ -1,7 +1,8 @@
 import { pool } from "@/db";
 import { findContacts } from "@/lib/contacts";
-import { persona } from "@/lib/persona";
+import { persona, article } from "@/lib/persona";
 import { emailRecruiter } from "@/app/actions";
+import { SendButton } from "@/components/SendButton";
 
 /** Published recruiter contacts for this application, and an email you can send as well as (or instead of) the form. */
 export async function RecruiterEmail({ app, flash }: { app: { id: string; title: string; employer: string; description?: string | null; status: string; cv_markdown?: string | null; notes?: string | null }; flash?: string }) {
@@ -19,7 +20,7 @@ export async function RecruiterEmail({ app, flash }: { app: { id: string; title:
   const hello = first?.name ? `Dear ${first.name.split(" ")[0]},` : "Dear Hiring Team,";
   const body = `${hello}
 
-${applied ? `I recently applied for the ${app.title} role at ${app.employer}` : `I'm applying for the ${app.title} role at ${app.employer}`} and wanted to introduce myself. I'm ${P.degreeSubject ? `a ${P.degreeSubject} ${P.fieldName === "engineering" ? "Engineering " : ""}student` : "a student"}${P.university ? ` at ${P.university}` : ""}.
+${applied ? `I recently applied for the ${app.title} role at ${app.employer}` : `I'm applying for the ${app.title} role at ${app.employer}`} and wanted to introduce myself. I'm ${P.degreeSubject ? `${article(`${P.degreeSubject}${P.fieldName === "engineering" && !/engineering/i.test(P.degreeSubject) ? " Engineering" : ""}`)} student` : "a student"}${P.university ? ` at ${P.university}` : ""}.
 
 [Write one or two sentences in your own words: why this role and company interest you.]
 
@@ -34,7 +35,7 @@ ${me || "[Your name]"}${det.phone ? `\n${det.phone}` : ""}`;
     <div className="space-y-3 text-sm">
       {flash === "sent" && <p style={{ color: "var(--good)" }}>✓ Sent from your job inbox. Replies will appear in Emails.</p>}
       {flash === "failed" && <p style={{ color: "var(--bad)" }}>Couldn&apos;t send. Check your job inbox connection in Settings, or use “Open in my Mail app”.</p>}
-      {flash === "invalid" && <p style={{ color: "var(--bad)" }}>Pick a contact and write a subject and a message first.</p>}
+      {flash === "invalid" && <p style={{ color: "var(--bad)" }}>Replace the [bracketed] line with your own words (and check your name), then send.</p>}
       {sentBefore && <p className="text-muted">✉️ You emailed {sentBefore.to} on {new Date(sentBefore.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.</p>}
 
       {contacts.length === 0 ? (
@@ -63,7 +64,7 @@ ${me || "[Your name]"}${det.phone ? `\n${det.phone}` : ""}`;
             {app.cv_markdown && <label className="flex items-center gap-2"><input type="checkbox" name="attachCv" defaultChecked={!applied} className="w-4 h-4" /> Attach my tailored CV (PDF)</label>}
             {!applied && <label className="flex items-center gap-2"><input type="checkbox" name="asApplication" className="w-4 h-4" /> This email is my application (mark it as sent)</label>}
             <div className="flex flex-wrap gap-2">
-              <button className="btn btn-primary" disabled={!inbox}>✉️ Send from my job inbox</button>
+              <SendButton disabled={!inbox}>✉️ Send from my job inbox</SendButton>
               <a href={`mailto:${first.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`} className="btn btn-ghost">Open in my Mail app</a>
             </div>
             {!inbox && <p className="text-xs text-muted">Connect your job inbox in Settings to send from here, or use your Mail app (attach the CV from “Your tailored CV” → Download).</p>}

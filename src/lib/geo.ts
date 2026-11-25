@@ -58,8 +58,8 @@ async function ensure() {
 
 /** Instant answers (built-in list / country centre) without any network call. */
 function instant(key: string): Pt | null {
-  if (key.startsWith("cc:")) { const c = COUNTRY_CENTRE[key.slice(3)]; return c ? { lat: c[0], lng: c[1], precise: false, label: key.slice(3) } : null; }
-  if (key.startsWith("pl:")) { const name = key.slice(3).split("|")[0]; const k = KNOWN[name]; if (k) return { lat: k[0], lng: k[1], precise: true, label: name }; }
+  if (key.startsWith("cc:")) { const cc = key.slice(3), c = COUNTRY_CENTRE[cc]; return c ? { lat: c[0], lng: c[1], precise: false, label: ({ UK: "United Kingdom", QA: "Qatar", EG: "Egypt" } as Record<string, string>)[cc] ?? cc } : null; }
+  if (key.startsWith("pl:")) { const name = key.slice(3).split("|")[0]; const k = KNOWN[name]; if (k) return { lat: k[0], lng: k[1], precise: true, label: name.replace(/\b[a-z]/g, (c) => c.toUpperCase()) }; }
   return null;
 }
 
@@ -85,6 +85,14 @@ async function getJson(url: string, init?: RequestInit) {
 /** Looks up places that aren't cached yet. Polite: postcodes in one batch, other places one a second. */
 export async function geocodePending(maxPlaces = 25, budgetMs = 40_000) {
   await ensure();
+  // One run at a time, so OpenStreetMap never gets more than 1 request a second; a stuck lock expires after 2 minutes
+  const lock = await pool.query(`insert into geocode (key, at) values ('~lock', now()) on conflict (key) do update set at = now() where geocode.at < now() - interval '2 minutes' returning key`);
+  if (!lock.rowCount) return 0;
+  try { return await lookupPending(maxPlaces, budgetMs); }
+  finally { await pool.query(`update geocode set at = now() - interval '1 hour' where key = '~lock'`).catch(() => {}); }
+}
+
+async function lookupPending(maxPlaces: number, budgetMs: number) {
   const t0 = Date.now();
   const jobs = (await pool.query(`select distinct location, country from jobs where listing_status = 'open' and not dismissed and location is not null`)).rows;
   const keys = [...new Set(jobs.flatMap((j) => placeKeys(j.location, j.country)))].filter((k) => !instant(k));
@@ -111,7 +119,8 @@ export async function geocodePending(maxPlaces = 25, budgetMs = 40_000) {
     const [name, cc] = key.slice(3).split("|");
     const q = new URLSearchParams({ q: name, format: "jsonv2", limit: "1", ...(names[cc] ? { countrycodes: names[cc] } : {}) });
     const d = await getJson(`https://nominatim.openstreetmap.org/search?${q}`);
-    const hit = Array.isArray(d) ? d[0] : null;
+    if (!Array.isArray(d)) break; // network error or rate limit: try again on the next run
+    const hit = d[0] ?? null;
     await save(key, hit ? { lat: Number(hit.lat), lng: Number(hit.lon), label: String(hit.display_name ?? name).split(",").slice(0, 2).join(",") } : null); n++;
     await new Promise((r) => setTimeout(r, 1100));
   }

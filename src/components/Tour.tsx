@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 /** Small "New here?" strip at the very top of Home. Hide it with ✕ (remembered on this device); the tour stays in ☰ Jump. */
 export function TourBanner() {
-  const [hidden, setHidden] = useState(false);
-  useEffect(() => { try { setHidden(localStorage.getItem("tour-hidden") === "1"); } catch {} }, []);
+  const [hidden, setHidden] = useState(true);
+  useEffect(() => { try { setHidden(localStorage.getItem("tour-hidden") === "1"); } catch { setHidden(false); } }, []);
   if (hidden) return null;
   return (
     <div className="card px-3 py-2 flex items-center gap-2 text-sm" data-jump="Tour">

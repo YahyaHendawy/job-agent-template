@@ -70,7 +70,7 @@ export function JobMap({ places, home }: { places: MapPlace[]; home: { label: st
           html: `<div class="jm-pin${p.id === sel ? " jm-on" : ""}" style="--c:${TONE[best]};width:${size}px;height:${size}px">${n}${p.precise ? "" : "<i>≈</i>"}</div>`,
         });
         const mk = L.marker([p.lat, p.lng], { icon, title: `${p.label}: ${n} job${n > 1 ? "s" : ""}`, keyboard: true, riseOnHover: true })
-          .on("click", (e) => { L.DomEvent.stopPropagation(e); setSel(p.id); })
+          .on("click", (e) => { L.DomEvent.stopPropagation(e); setSel(p.id); m.panTo([p.lat, p.lng], { animate: true }); })
           .addTo(m);
         markers.current.set(p.id, mk);
       }
@@ -82,8 +82,7 @@ export function JobMap({ places, home }: { places: MapPlace[]; home: { label: st
   // Highlight the selected pin and bring it into view
   useEffect(() => {
     markers.current.forEach((mk, id) => mk.getElement()?.querySelector(".jm-pin")?.classList.toggle("jm-on", id === sel));
-    if (selected && map.current) map.current.panTo([selected.lat, selected.lng], { animate: true });
-  }, [sel, selected]);
+  }, [sel]);
 
   const fly = async (ps: MapPlace[]) => {
     const L = (await import("leaflet")).default;
@@ -103,13 +102,13 @@ export function JobMap({ places, home }: { places: MapPlace[]; home: { label: st
         {home && <button type="button" className="chip !py-1.5 shrink-0" onClick={() => { const ps = places.filter((p) => p.label.toLowerCase().includes(home.label.toLowerCase())); fly(ps.length ? ps : places); }}>🏠 {home.label}</button>}
       </div>
 
-      <div className="relative rounded-xl overflow-hidden border border-line" style={{ height: "min(68dvh, 640px)", minHeight: 380 }}>
+      <div className="relative isolate rounded-xl overflow-hidden border border-line" style={{ height: "min(68dvh, 640px)", minHeight: 380 }}>
         <div ref={box} className="absolute inset-0 jm" aria-label="Map of jobs" />
         {!places.length && <div className="absolute inset-0 grid place-items-center text-sm text-muted pointer-events-none">No jobs to show with these filters</div>}
 
         {/* Bottom sheet with the jobs at the tapped pin */}
         {selected && (
-          <div className="absolute left-2 right-2 bottom-2 z-[500] card p-3 max-h-[58%] flex flex-col" style={{ background: "rgba(10,10,13,.96)" }} role="dialog" aria-label={`Jobs in ${selected.label}`}>
+          <div className="absolute left-2 right-2 bottom-2 z-[500] card p-3 max-h-[58%] flex flex-col" style={{ background: "color-mix(in srgb, var(--surface) 96%, transparent)" }} role="dialog" aria-label={`Jobs in ${selected.label}`}>
             <div className="flex items-center gap-2 mb-2">
               <div className="min-w-0 flex-1">
                 <p className="font-bold truncate">📍 {selected.label}{selected.precise ? "" : " (approx.)"}</p>

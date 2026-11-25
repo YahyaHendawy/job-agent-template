@@ -432,6 +432,7 @@ export async function toggleMove(id: string) {
 /** "I've learned this" for a skill-gap item (remember to add it to the CV too). */
 export async function toggleLearned(key: string) {
   await saveTracks((v) => { v.learned = v.learned.includes(key) ? v.learned.filter((x) => x !== key) : [...v.learned, key]; });
+  await pool.query(`delete from settings where key = 'skillGapCache'`);
 }
 
 /** Settings → Appearance: save the whole look (validated against the defaults). */
@@ -463,7 +464,7 @@ export async function emailRecruiter(appId: string, f: FormData) {
   if (!a) return;
   // Only to a published contact for this application
   const { contacts } = await findContacts(a);
-  if (!contacts.some((c) => c.email === to) || subject.length < 3 || text.length < 20) redirect(`/applications/${appId}?mail=invalid#recruiter`);
+  if (!contacts.some((c) => c.email === to) || subject.length < 3 || text.length < 20 || /\[(Write one or two sentences|Your name)/.test(text)) redirect(`/applications/${appId}?mail=invalid#recruiter`);
   await guarded("email_recruiter", { appId });
   const attachments: { filename: string; content: Buffer }[] = [];
   if (f.get("attachCv") && a.cv_markdown) {

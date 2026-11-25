@@ -2,7 +2,7 @@
 const VERSION = "v3";
 const PAGES = `ja-pages-${VERSION}`;   // your screens (HTML), refreshed every time you're online
 const ASSETS = `ja-assets-${VERSION}`; // app code, styles, icons (never change once published)
-const CORE = ["/", "/applications", "/jobs", "/guide", "/activity", "/settings/details", "/emails"];
+const CORE = ["/", "/applications", "/jobs", "/todo", "/map", "/manager", "/analytics", "/emails", "/activity", "/settings/details", "/tour"];
 const WARM_EVERY_MS = 20 * 60 * 1000;
 
 self.addEventListener("install", (e) => {

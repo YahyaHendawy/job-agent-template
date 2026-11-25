@@ -5,9 +5,10 @@ import { PageHeader, CATEGORY, ELIG, APP_STATUS } from "@/components/ui";
 import { ListControls } from "@/components/ListControls";
 import { loadPersona, persona, marketOptions } from "@/lib/persona";
 import { placeKeys, lookup, geocodePending } from "@/lib/geo";
-import { chance } from "@/lib/chance";
+import { chance, CHANCE_FLAGS_SQL } from "@/lib/chance";
 import { unanswered } from "@/lib/written";
 import { JobMap, type MapPlace } from "@/components/JobMap";
+import { LimitsNote } from "@/components/Limits";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
   if (sp.starred) where.push(`j.starred`);
 
   const r = await pool.query(
-    `select j.id, j.title, j.employer, j.location, j.country, j.category, j.match_score, j.eligibility, j.deadline, j.salary, j.discovered_at, j.description, j.missing_evidence,
+    `select j.id, j.title, j.employer, j.location, j.country, j.category, j.match_score, j.eligibility, j.deadline, j.salary, j.discovered_at, ${CHANCE_FLAGS_SQL} as description, j.missing_evidence,
             s.kind as source_kind, a.id as app_id, a.status, a.answers, a.missing_info, a.written, a.form_questions
      from jobs j left join sources s on s.id = j.source_id left join applications a on a.job_id = j.id
      where ${where.join(" and ")} order by j.match_score desc limit 600`, args);
@@ -41,13 +42,13 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
   const keysOf = rows.map((j) => ({ j, keys: placeKeys(j.location, j.country) }));
   const pts = await lookup(keysOf.flatMap((x) => x.keys));
   const places = new Map<string, MapPlace>();
-  let unmapped = 0, remote = 0;
+  let unmapped = 0, remote = 0, noLoc = 0;
   for (const { j, keys } of keysOf) {
     const hit = keys.map((k) => pts.get(k)).filter(Boolean);
-    if (!hit.length) { if (/remote/i.test(j.location ?? "")) remote++; else unmapped++; continue; }
+    if (!hit.length) { if (/remote/i.test(j.location ?? "")) remote++; else if (!keys.length) noLoc++; else unmapped++; continue; }
     for (const p of hit) {
       const id = `${p!.lat.toFixed(3)},${p!.lng.toFixed(3)}`;
-      const place: MapPlace = places.get(id) ?? { id, lat: p!.lat, lng: p!.lng, precise: p!.precise, country: j.country, label: (j.location ?? "").replace(/,\s*(United Kingdom|UK)$/i, ""), jobs: [] as MapPlace["jobs"] };
+      const place: MapPlace = places.get(id) ?? { id, lat: p!.lat, lng: p!.lng, precise: p!.precise, country: j.country, label: p!.label || (j.location ?? ""), jobs: [] as MapPlace["jobs"] };
       if (!place.jobs.some((x) => x.id === j.id)) place.jobs.push({
         id: j.id, appId: j.app_id, title: j.title, employer: j.employer, location: j.location, match: j.match_score,
         type: CATEGORY[j.category] ?? j.category, elig: ELIG[j.eligibility]?.label ?? j.eligibility, eligColor: ELIG[j.eligibility]?.color ?? "var(--muted)",
@@ -79,9 +80,10 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
           { name: "found", label: "Found", options: [["1", "Last 24 hours"], ["7", "Last 7 days"], ["30", "Last 30 days"]] },
           { name: "starred", label: "Starred", options: [["1", "Starred only"]] },
         ]} />
+      <div className="mb-3"><LimitsNote topic="map" max={1} /></div>
       <JobMap places={list} home={H.city ? { label: H.city, country: H.country } : null} />
       <p className="text-xs text-muted mt-2">
-        {mapped} of {rows.length} on the map{remote ? ` · ${remote} remote` : ""}{unmapped ? ` · ${unmapped} still being located (they appear within 30 minutes)` : ""}.
+        {mapped} of {rows.length} on the map{remote ? ` · ${remote} remote` : ""}{noLoc ? ` · ${noLoc} with no location in the advert` : ""}{unmapped ? ` · ${unmapped} still being located (usually within 30 minutes)` : ""}.
         {" "}Pins marked ≈ show only the country or area. Map © OpenStreetMap contributors.
       </p>
     </div>

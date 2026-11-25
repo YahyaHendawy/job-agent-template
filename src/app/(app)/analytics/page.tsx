@@ -68,7 +68,7 @@ export default async function Analytics() {
   const tests = reached("assessment"), interviews = reached("interview");
   const outcome = (list: any[], next: string[]) => ({ passed: list.filter((a) => next.includes(a.status)).length, failed: list.filter((a) => a.status === "rejected").length, waiting: list.filter((a) => !next.includes(a.status) && a.status !== "rejected").length });
   const T = outcome(tests, ["interview", "offer"]), I = outcome(interviews, ["offer"]);
-  const rejectedAtApply = n((a) => a.status === "rejected" && !seen.get(a.id)?.has("assessment") && !seen.get(a.id)?.has("interview"));
+  const rejectedAtApply = n((a) => a.status === "rejected" && !String(a.notes ?? "").includes('"noReply"') && !seen.get(a.id)?.has("assessment") && !seen.get(a.id)?.has("interview"));
   const declined = new Map<string, number>();
   for (const a of A.filter((x) => x.status === "declined")) { try { const r = JSON.parse(a.notes ?? "{}").decision?.reasonText ?? "No reason given"; declined.set(r, (declined.get(r) ?? 0) + 1); } catch { /* old note */ } }
 
