@@ -6,7 +6,7 @@ export function CopyBox({ text, rows = 8, label = "Copy" }: { text: string; rows
   const [done, setDone] = useState(false);
   return (
     <div className="space-y-1.5">
-      <textarea readOnly rows={rows} value={text} className="input font-sans !text-sm" onFocus={(e) => e.currentTarget.select()} />
+      <textarea readOnly rows={rows} value={text} className="input font-sans" onFocus={(e) => e.currentTarget.select()} />
       <button type="button" className="btn btn-ghost !text-xs" onClick={async () => { try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500); } catch {} }}>
         {done ? "✓ Copied" : `📋 ${label}`}
       </button>

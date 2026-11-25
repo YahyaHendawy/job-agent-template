@@ -39,14 +39,14 @@ export default async function WorkItem({ params, searchParams }: { params: Promi
   const mail = offerMail.rows[0]?.id as string | undefined;
   const otherOffers = others.rows.filter((x) => x.status === "offer");
   const done = o.checklist ?? [];
-  const prep = prepItems(id, a, o);
+  const prep = prepItems(id, a, o).filter((i) => i.id !== "others" || others.rows.length > 0);
   const prepLeft = prep.filter((i) => !done.includes(i.id)).length;
   const rate = hourlyRate(o.pay ?? a.salary);
   const totalH = hours.reduce((s, h) => s + Number(h.hours), 0);
   const H = P.visa.termHours;
   const me = [det.firstName, det.lastName].filter(Boolean).join(" ");
   const step = STATE_ORDER.indexOf(o.state);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: P.timeZone || "Europe/London" }); // London date, not the server's
   const cvText = `${a.title} — ${a.employer}${o.start ? ` (${new Date(`${o.start}T00:00:00`).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}${o.end ? ` – ${new Date(`${o.end}T00:00:00`).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}` : " – present"})` : ""}
 ${journal.length ? journal.slice().reverse().map((j) => `• ${j.text}`).join("\n") : "• [Add what you did and achieved: use your work journal below]"}`;
   const refText = `Hi ${o.manager?.split(" ")[0] ?? "[name]"},
@@ -203,10 +203,10 @@ ${me || "[Your name]"}`;
               const over = isUkStudent() && vac !== true && Number(h.hours) > H;
               return (
                 <li key={h.id} className="py-1.5 flex items-center gap-2">
-                  <span className="flex-1">Week of {fmtDay(h.day)}{isUkStudent() && <span className="text-xs text-muted"> · {vac === true ? "summer vacation" : vac === false ? "term time" : "term or vacation?"}</span>}</span>
+                  <span className="flex-1">Week of {fmtDay(h.day)}{isUkStudent() && <span className="text-xs text-muted"> · {vac === true ? "summer vacation" : vac === false ? "outside your summer break" : "term or vacation?"}</span>}</span>
                   <b className="tabular-nums" style={over ? { color: "var(--bad)" } : undefined}>{Number(h.hours)} h</b>
                   <form action={deleteWorkLog.bind(null, id, String(h.id))}><button className="text-xs text-muted px-1" aria-label="Delete">✕</button></form>
-                  {over && <span className="basis-full text-xs" style={{ color: "var(--bad)" }}>Over your {H} h term-time limit{vac === null ? " if this was a term week" : ""}: talk to your manager about cutting hours</span>}
+                  {over && <span className="basis-full text-xs" style={{ color: "var(--bad)" }}>Over {H} h: only allowed if this was an official vacation week (e.g. Christmas or Easter). If it was term time, talk to your manager about cutting hours</span>}
                 </li>
               );
             })}
