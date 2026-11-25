@@ -5,6 +5,8 @@ import { isHomeCity } from "@/matching";
 import { pool } from "@/db";
 import { PageHeader, APP_STATUS, CATEGORY, ELIG, fmtDate, timeAgo } from "@/components/ui";
 import { verdict } from "@/lib/verdict";
+import { chance } from "@/lib/chance";
+import { ChanceChip } from "@/components/Chance";
 import { halalCheck } from "@/lib/halal";
 import { questionsFor } from "@/lib/written";
 import { decideYes, decideNo } from "@/app/actions";
@@ -35,8 +37,8 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
   const r = await pool.query(
     `select j.id as job_id, j.title, j.employer, j.location, j.country, j.category, j.match_score, j.match_reasons, j.eligibility, j.eligibility_reasons,
             j.salary, j.deadline, j.start_date, j.duration, j.employment_type, j.description, j.listing_status, j.discovered_at, j.last_verified_at,
-            a.id as app_id, a.status, a.missing_info, a.answers, a.written, a.form_questions
-     from jobs j left join applications a on a.job_id = j.id where j.id = any($1)`, [list]);
+            a.id as app_id, a.status, a.missing_info, a.answers, a.written, a.form_questions, s.kind as source_kind
+     from jobs j left join applications a on a.job_id = j.id left join sources s on s.id = j.source_id where j.id = any($1)`, [list]);
   const items = list.map((id) => r.rows.find((x) => x.job_id === id)).filter(Boolean) as any[];
   const data = items.map((j) => {
     const v = verdict(j);
@@ -44,13 +46,15 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
     const written = new Set((j.written ?? []).map((w: any) => w.key));
     const toWrite = questionsFor(j).filter((q) => !written.has(q.key)).length;
     const days = j.deadline ? Math.ceil((Date.parse(j.deadline) - Date.now()) / 86400000) : null;
-    return { j, v, reqs, toWrite, minutes: toWrite * 5 + 10, days, halal: halalCheck(j) };
+    const ch = chance({ ...j, unanswered: j.app_id ? toWrite : null });
+    return { j, v, ch, reqs, toWrite, minutes: toWrite * 5 + 10, days, halal: halalCheck(j) };
   });
   const RANK: Record<string, number> = { good: 3, ok: 2, warn: 1, bad: 0 };
   const ELIG_RANK: Record<string, number> = { eligible: 3, potentially_eligible: 2, manual_verification: 1, ineligible: 0 };
 
   const rows: Row[] = [
     { label: "Recommendation", best: "high", cells: data.map((d) => ({ text: <span className="font-semibold" style={{ color: TONE[d.v.tone] }}>{d.v.call}</span>, score: RANK[d.v.tone] })) },
+    { label: "Chance of getting it", best: "high", cells: data.map((d) => ({ text: <ChanceChip c={d.ch} />, score: d.ch.pct })) },
     { label: "Match", best: "high", cells: data.map((d) => ({ text: d.j.match_score != null ? `${d.j.match_score}%` : "—", score: d.j.match_score })) },
     { label: "Your visa", best: "high", cells: data.map((d) => ({ text: <span style={{ color: ELIG[d.j.eligibility]?.color }}>{ELIG[d.j.eligibility]?.label ?? "—"}</span>, score: ELIG_RANK[d.j.eligibility] })) },
     { label: "Halal", best: "high", cells: data.map((d) => ({ text: d.halal.blocked ? "☪️ Not halal" : d.halal.warnings.length ? `☪️ ${d.halal.warnings[0].replace("Halal check: ", "")}` : "✓ No concerns", score: d.halal.blocked ? 0 : d.halal.warnings.length ? 1 : 2 })) },
@@ -115,6 +119,14 @@ export default async function Compare({ searchParams }: { searchParams: Promise<
             <tr className="border-t border-line">
               <th className="sticky left-0 z-10 text-left p-3 font-semibold text-muted align-top" style={{ background: "var(--surface)" }}>Why you might not</th>
               {data.map((d) => <td key={d.j.job_id} className="p-3 align-top border-l border-line text-xs"><ul className="space-y-1">{d.v.cons.length ? d.v.cons.map((c, i) => <li key={i}>⚠️ {c}</li>) : <li className="text-muted">No concerns</li>}</ul></td>)}
+            </tr>
+            <tr className="border-t border-line">
+              <th className="sticky left-0 z-10 text-left p-3 font-semibold text-muted align-top" style={{ background: "var(--surface)" }}>Why you could get it</th>
+              {data.map((d) => <td key={d.j.job_id} className="p-3 align-top border-l border-line text-xs"><ul className="space-y-1">{d.ch.could.length ? d.ch.could.map((c, i) => <li key={i}>👍 {c}</li>) : <li className="text-muted">Nothing stands out</li>}</ul></td>)}
+            </tr>
+            <tr className="border-t border-line">
+              <th className="sticky left-0 z-10 text-left p-3 font-semibold text-muted align-top" style={{ background: "var(--surface)" }}>Why you might not get it</th>
+              {data.map((d) => <td key={d.j.job_id} className="p-3 align-top border-l border-line text-xs"><ul className="space-y-1">{d.ch.couldnt.length ? d.ch.couldnt.map((c, i) => <li key={i}>👎 {c}</li>) : <li className="text-muted">No obvious obstacles</li>}</ul></td>)}
             </tr>
             <tr className="border-t border-line">
               <th className="sticky left-0 z-10 text-left p-3 font-semibold text-muted align-top" style={{ background: "var(--surface)" }}>Decide</th>

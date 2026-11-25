@@ -4,9 +4,13 @@ import { notFound } from "next/navigation";
 import { pool } from "@/db";
 import { Score, EligChip, CATEGORY, fmtDate, timeAgo } from "@/components/ui";
 import { prepareApplicationAction, toggleJobFlag } from "@/app/actions";
+import { ChanceView } from "@/components/Chance";
+import { chance } from "@/lib/chance";
+import { loadPersona } from "@/lib/persona";
 
 export default async function Job({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  await loadPersona();
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const r = await pool.query(
     `select j.*, s.kind as source_kind, s.employer as source_name, a.id as app_id, a.status as app_status
@@ -52,6 +56,11 @@ export default async function Job({ params }: { params: Promise<{ id: string }> 
           <form action={toggleJobFlag.bind(null, j.id, "dismissed")}><button className="btn btn-ghost">{j.dismissed ? "Restore" : "Dismiss"}</button></form>
         </div>
       </div>
+
+      <section className="card p-4">
+        <h2 className="font-bold mb-3">Chance of getting it</h2>
+        <ChanceView c={chance({ ...j, status: j.app_status, missing_info: j.missing_evidence })} />
+      </section>
 
       <section className="card p-4">
         <h2 className="font-bold mb-2">Eligibility reasoning</h2>

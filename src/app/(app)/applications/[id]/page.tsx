@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 import { pool } from "@/db";
 import { verdict } from "@/lib/verdict";
 import { VerdictView } from "@/components/Verdict";
+import { ChanceView, ChanceChip } from "@/components/Chance";
+import { chance } from "@/lib/chance";
 import { APP_STATUS, CATEGORY, ELIG, fmtTime, fmtDate, timeAgo } from "@/components/ui";
 import { markSubmitted, setApplicationStatus, decideYes, decideNo, decideLater, reconsider } from "@/app/actions";
 import { Markdown } from "@/components/Markdown";
@@ -86,6 +88,7 @@ export default async function AppDetail({ params, searchParams }: { params: Prom
   const ev = await pool.query(`select id, ts, title, level from events where application_id = $1 order by id desc limit 20`, [id]);
 
   const v = verdict(a, { age: currentAge(details as any) });
+  const ch = chance({ ...a, answers: a.answers, unanswered: answersUI.filter((q) => !q.answer.trim()).length });
   const pre = ["awaiting_approval", "approved", "draft", "preparing", "declined"].includes(a.status);
   const unanswered = answersUI.filter((q) => !q.answer.trim());
   const dv = details as Record<string, any>;
@@ -110,9 +113,10 @@ export default async function AppDetail({ params, searchParams }: { params: Prom
 
       {/* Header + decision: always first */}
       <div className="card p-4">
-        <div className="flex items-start gap-2 mb-2">
+        <div className="flex flex-wrap items-start gap-2 mb-2">
           <span className="chip">{APP_STATUS[a.status] ?? a.status}</span>
           <span className="chip font-semibold" style={{ color: v.tone === "good" ? "var(--good)" : v.tone === "bad" ? "var(--bad)" : v.tone === "warn" ? "var(--warn)" : "var(--accent)" }}>{v.call}</span>
+          <ChanceChip c={ch} />
           {a.match_score != null && <span className="chip ml-auto">{a.match_score}% match</span>}
           <CompareToggle jobId={a.job_id} label={a.employer} />
         </div>
@@ -209,6 +213,8 @@ export default async function AppDetail({ params, searchParams }: { params: Prom
       </Section>
 
       <Section n={++n} title="Should you apply?"><VerdictView v={v} /></Section>
+
+      <Section n={++n} title="Chance of getting it"><ChanceView c={ch} /></Section>
 
       <Section n={++n} title="Visa & eligibility" right={<span className="chip" style={{ color: ELIG[a.eligibility]?.color }}>{ELIG[a.eligibility]?.label}</span>}>
         <ul className="space-y-1.5 text-sm">{((a.eligibility_reasons as string[]) ?? []).map((x, i) => <li key={i}>• {x}</li>)}</ul>

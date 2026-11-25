@@ -8,6 +8,9 @@ import { Stepper, Donut, PALETTE } from "@/components/charts";
 import { verdict } from "@/lib/verdict";
 import { readNotes } from "@/lib/goahead";
 import { VerdictView } from "@/components/Verdict";
+import { ChanceChip } from "@/components/Chance";
+import { chance } from "@/lib/chance";
+import { unanswered } from "@/lib/written";
 
 const TABS: [string, string, string[]][] = [
   ["approval", "To decide", ["awaiting_approval"]],
@@ -45,28 +48,31 @@ export default async function Applications({ searchParams }: { searchParams: Pro
     smart: "(j.deadline is not null and j.deadline > now()) desc, j.deadline asc nulls last, j.match_score desc",
     match: "j.match_score desc", match_asc: "j.match_score asc", deadline: "j.deadline asc nulls last", deadline_desc: "j.deadline desc nulls last",
     new: "a.created_at desc", old: "a.created_at asc", updated: "a.updated_at desc", employer: "lower(j.employer) asc", title: "lower(j.title) asc",
-    verdict: "j.match_score desc",
+    verdict: "j.match_score desc", chance: "j.match_score desc",
   };
   const defaultSort = ["approval", "going", "drafts"].includes(cur[0]) && !term ? "smart" : "updated";
   const sortKey = sp.sort && ORDER[sp.sort] ? sp.sort : defaultSort;
   const r = await pool.query(
     `select a.id, a.status, a.updated_at, a.created_at, j.id as job_id, j.title, j.employer, j.deadline, j.match_score, j.category, j.location, j.country, j.match_reasons,
-            j.eligibility, j.eligibility_reasons, a.missing_info, j.salary, a.notes
-     from applications a join jobs j on j.id = a.job_id where ${where.join(" and ")} order by ${ORDER[sortKey]}`, args);
+            j.eligibility, j.eligibility_reasons, a.missing_info, j.salary, a.notes, a.answers, a.written, a.form_questions, j.description, j.discovered_at, s.kind as source_kind
+     from applications a join jobs j on j.id = a.job_id left join sources s on s.id = j.source_id where ${where.join(" and ")} order by ${ORDER[sortKey]}`, args);
   // Recommendation (✅/👍/🤔/⚠️) is worked out per application, so it is filtered and sorted here.
   const RANK: Record<string, number> = { good: 0, ok: 1, warn: 2, bad: 3 };
-  let rows = r.rows.map((a) => ({ ...a, v: verdict(a) }));
+  let rows = r.rows.map((a) => ({ ...a, v: verdict(a), ch: chance({ ...a, unanswered: unanswered(a).length }) }));
   if (sp.verdict) rows = rows.filter((a) => a.v.tone === sp.verdict);
+  if (sp.chance) rows = rows.filter((a) => sp.chance === "strong" ? a.ch.pct >= 18 : sp.chance === "possible" ? a.ch.pct >= 8 && a.ch.pct < 18 : a.ch.pct < 8);
+  if (sortKey === "chance") rows.sort((x, y) => y.ch.pct - x.ch.pct || (y.match_score ?? 0) - (x.match_score ?? 0));
   if (sortKey === "verdict") rows.sort((x, y) => RANK[x.v.tone] - RANK[y.v.tone] || (y.match_score ?? 0) - (x.match_score ?? 0));
   const daysLeft = (d: string | null) => (d ? Math.ceil((Date.parse(d) - Date.now()) / 86400000) : null);
   return (
     <div>
       <PageHeader title="Applications" subtitle="Nothing is submitted without your approval." />
       <ListControls action="/applications" params={{ ...sp, sort: sortKey }} keep={["tab"]} placeholder="Search applications by role or employer…" count={rows.length} total={term ? counts.rows.reduce((n, x) => n + x.n, 0) : cur[2].reduce((n, s) => n + (c[s] ?? 0), 0)}
-        sorts={[["smart", "Smart: closing soonest, then best"], ["verdict", "Recommendation (✅ first)"], ["match", "Best match"], ["match_asc", "Lowest match"],
+        sorts={[["smart", "Smart: closing soonest, then best"], ["verdict", "Recommendation (✅ first)"], ["chance", "Best chance of getting it"], ["match", "Best match"], ["match_asc", "Lowest match"],
           ["deadline", "Deadline: soonest"], ["deadline_desc", "Deadline: latest"], ["new", "Newest prepared"], ["old", "Oldest prepared"], ["updated", "Recently updated"],
           ["employer", "Employer A–Z"], ["title", "Job title A–Z"]]}
         filters={[
+          { name: "chance", label: "Chance of getting it", options: [["strong", "Good or strong (18%+)"], ["possible", "Possible (8–17%)"], ["long", "Long shot (under 8%)"]] },
           { name: "verdict", label: "Recommendation", options: [["good", "✅ Apply"], ["ok", "👍 Worth applying"], ["warn", "🤔 Your call"], ["bad", "⚠️ Probably skip"]] },
           { name: "category", label: "Type", options: Object.entries(CATEGORY) },
           { name: "country", label: "Country", options: marketOptions() },
@@ -119,6 +125,7 @@ export default async function Applications({ searchParams }: { searchParams: Pro
                   : <> · <span style={{ color: d <= 7 ? "var(--bad)" : undefined, fontWeight: d <= 7 ? 600 : undefined }}>{d === 0 ? "closes today" : d === 1 ? "closes tomorrow" : `closes in ${d} days`}</span></>; })()}
               </p>
             </div>
+            <div className="mb-1.5"><ChanceChip c={a.ch} /></div>
             {["awaiting_approval", "draft", "preparing", "approved"].includes(a.status) ? <VerdictView v={a.v} compact />
               : a.status === "declined" ? <p className="text-xs text-muted">👎 {readNotes(a.notes).decision?.reasonText ?? "Not doing"} · decided {timeAgo(readNotes(a.notes).decision?.at ?? a.updated_at)}</p>
               : <Stepper status={a.status} compact />}
