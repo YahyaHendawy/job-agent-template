@@ -155,7 +155,7 @@ export default async function YourPart({ searchParams }: { searchParams: Promise
           return (
             <li key={a.id} className="py-2.5 flex items-center gap-2">
               <div className="min-w-0 flex-1"><p className="font-semibold text-sm truncate">{a.employer}: {a.title}</p><p className="text-xs text-muted">{what}</p></div>
-              <Link href={`/applications/${a.id}`} className="btn btn-primary !py-1.5 !text-xs">Prep</Link>
+              <Link href={a.status === "offer" ? `/work/${a.id}` : `/applications/${a.id}`} className="btn btn-primary !py-1.5 !text-xs">{a.status === "offer" ? "Manage" : "Prep"}</Link>
             </li>
           );
         })}

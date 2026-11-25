@@ -131,7 +131,7 @@ export async function orders(): Promise<Order[]> {
   ]);
   const goal = goalRow[0]?.value?.applicationsPerWeek ?? 5;
   const o: Order[] = [];
-  if (c.offer) o.push({ icon: "🎉", weight: 100, title: `Respond to ${c.offer > 1 ? `${c.offer} offers` : "your offer"}`, why: "Offers have deadlines. Check dates fit your studies and visa, then reply.", href: "/applications?tab=offers", cta: "Open" });
+  if (c.offer) o.push({ icon: "🎉", weight: 100, title: `Respond to ${c.offer > 1 ? `${c.offer} offers` : "your offer"}`, why: "Offers have deadlines. Check dates fit your studies and visa, then reply.", href: "/work", cta: "Open" });
   if (c.stage) o.push({ icon: "🎤", weight: 95, title: `Prepare for ${c.stage} test${c.stage > 1 ? "s/interviews" : " or interview"}`, why: "This is the stage that turns applications into offers. 1 hour of prep each makes a real difference.", href: "/applications?tab=progress", cta: "Prep" });
   for (const a of soonGo) o.push({ icon: "⏰", weight: 92, title: `Send ${a.employer} before it closes`, why: "You already said yes and the deadline is within 4 days.", href: `/applications/${a.id}#next-steps`, cta: "Send" });
   if (c.mail) o.push({ icon: "📧", weight: 90, title: `Answer ${c.mail} email${c.mail > 1 ? "s" : ""}`, why: "Replies within 24 hours look professional; slow replies lose interview slots.", href: "/todo#emails", cta: "Reply" });

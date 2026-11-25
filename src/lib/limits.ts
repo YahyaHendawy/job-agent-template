@@ -4,7 +4,7 @@
  */
 import { persona, isUkStudent } from "@/lib/persona";
 
-export type LimitTopic = "home" | "apply" | "jobs" | "emails" | "compare" | "notifications" | "visa" | "map";
+export type LimitTopic = "home" | "apply" | "jobs" | "emails" | "compare" | "notifications" | "visa" | "map" | "work";
 export type Limit = { id: string; icon: string; title: string; detail: string; instead: string; href?: string; topics: LimitTopic[]; top?: boolean };
 
 export function limits(ctx: { inbox?: string | null } = {}): Limit[] {
@@ -32,7 +32,7 @@ export function limits(ctx: { inbox?: string | null } = {}): Limit[] {
       title: `I only read ${inbox}`,
       detail: "Replies sent to any other email address, by text or by phone call won't reach me. I never send an email unless you press Send.",
       instead: `Use ${inbox} on every application (autofill already does) and tell me about anything that arrives elsewhere.`, href: "/emails" },
-    { id: "visa", icon: "🛂", topics: ["apply", "visa", "compare"],
+    { id: "visa", icon: "🛂", topics: ["apply", "visa", "compare", "work"],
       title: "My visa and eligibility checks are a guide, not advice",
       detail: `I read the advert's wording against ${isUkStudent() ? "Student visa rules" : "your work rules"}, but adverts are vague and rules change.${isUkStudent() ? ` Summer dates are estimates until ${uni} publishes them.` : ""}`,
       instead: `Check anything marked “verify” with ${uni} and gov.uk before accepting an offer.` },
@@ -48,6 +48,10 @@ export function limits(ctx: { inbox?: string | null } = {}): Limit[] {
       title: "I can only email recruiters whose address is published",
       detail: "I use addresses written in the advert or from people at the employer who've emailed you. I never guess an address, and nothing is sent until you tap Send.",
       instead: "No address? Use the LinkedIn link on the application to message their recruiters." },
+    { id: "work", icon: "✍️", topics: ["work"],
+      title: "I can't accept, negotiate or sign anything for you",
+      detail: "Replying to offers, contracts and right-to-work checks are yours. I prepare the emails and checklists, check the offer against your visa, and remind you.",
+      instead: "Reply with the templates here, then tap the matching button so I stay up to date." },
     { id: "map", icon: "🗺️", topics: ["map"],
       title: "Map pins can be approximate",
       detail: "Adverts often give only a city or area, so the pin sits at its centre (≈ when only the country or region is known). Remote jobs aren't on the map, and the map needs internet.",

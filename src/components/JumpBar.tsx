@@ -13,6 +13,7 @@ const DESTS: Dest[] = [
   { group: "Main", label: "🗺️ Map of all jobs", href: "/map", keywords: "where location places pins" },
   { group: "Main", label: "📄 Applications", href: "/applications" },
   { group: "Main", label: "✋ Solo (things only you can do)", href: "/todo", keywords: "to do todo checklist my part" },
+  { group: "Main", label: "💼 My job (offers, starting, hours)", href: "/work", keywords: "offer accept decline contract start hours journal reference work placement" },
   { group: "Main", label: "🎯 Manager (career plan)", href: "/manager", keywords: "career coach orders skills season scorecard goat" },
   { group: "Main", label: "📧 Emails", href: "/emails" },
   { group: "Main", label: "📊 Analytics (pie charts, weak points)", href: "/analytics", keywords: "stats statistics charts pie weak points cv assessments stages" },

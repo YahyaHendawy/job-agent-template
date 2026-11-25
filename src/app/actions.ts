@@ -489,3 +489,97 @@ export async function emailRecruiter(appId: string, f: FormData) {
   revalidatePath(`/applications/${appId}`);
   redirect(`/applications/${appId}?mail=sent#recruiter`);
 }
+
+/* ---------------- My job: managing an opportunity ---------------- */
+const isDay = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+/** Save the offer's details (pay, hours, dates, place, manager, contract). */
+export async function saveOpportunity(appId: string, f: FormData) {
+  await requireUser();
+  const { setOpp } = await import("@/lib/opportunity");
+  const hours = Number(str(f, "hours"));
+  const email = str(f, "managerEmail");
+  await setOpp(appId, {
+    pay: str(f, "pay").slice(0, 80) || undefined, hours: str(f, "hours") && hours >= 0 && hours <= 80 ? hours : undefined,
+    start: isDay(str(f, "start")) ? str(f, "start") : undefined, end: isDay(str(f, "end")) ? str(f, "end") : undefined,
+    respondBy: isDay(str(f, "respondBy")) ? str(f, "respondBy") : undefined, address: str(f, "address").slice(0, 200) || undefined,
+    manager: str(f, "manager").slice(0, 80) || undefined, managerEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email.slice(0, 120) : undefined,
+    contract: f.get("contract") === "on", notes: str(f, "notes").slice(0, 1000) || undefined,
+  });
+  revalidatePath(`/work/${appId}`); revalidatePath("/work");
+  redirect(`/work/${appId}?saved=1#details`);
+}
+
+/** Accept, decline, or move the opportunity along. */
+export async function setOppState(appId: string, state: string) {
+  await requireUser();
+  if (!["considering", "accepted", "started", "finished", "declined"].includes(state)) return;
+  const { setOpp } = await import("@/lib/opportunity");
+  await setOpp(appId, { state: state as any, ...(state === "accepted" || state === "declined" ? { decidedAt: new Date().toISOString() } : {}) });
+  // A declined offer goes to "Not doing"; un-declining brings it back to Offers
+  if (state === "declined") await pool.query(`update applications set status = 'withdrawn', updated_at = now() where id = $1 and status = 'offer'`, [appId]);
+  else await pool.query(`update applications set status = 'offer', updated_at = now() where id = $1 and status = 'withdrawn'`, [appId]);
+  const j = (await pool.query(`select j.employer from applications a join jobs j on j.id = a.job_id where a.id = $1`, [appId])).rows[0];
+  const t: Record<string, string> = { accepted: `🎉 You accepted ${j?.employer ?? "the offer"}`, declined: `You declined ${j?.employer ?? "the offer"}`, started: `💼 Started at ${j?.employer ?? "your new job"}`, finished: `🏁 Finished at ${j?.employer ?? "your job"}`, considering: "Offer back to deciding" };
+  await emit({ type: "employer_response", level: state === "declined" ? "info" : "success", title: t[state], applicationId: appId, push: false });
+  revalidatePath(`/work/${appId}`); revalidatePath("/work"); revalidatePath("/");
+}
+
+/** Tick an item on the getting-ready or finishing list. */
+export async function toggleOppItem(appId: string, item: string) {
+  await requireUser();
+  const { setOpp, oppOf } = await import("@/lib/opportunity");
+  const o = oppOf((await pool.query(`select notes from applications where id = $1`, [appId])).rows[0]?.notes ?? null);
+  const list = o.checklist ?? [];
+  await setOpp(appId, { checklist: list.includes(item) ? list.filter((x) => x !== item) : [...list, item].slice(0, 50) });
+  revalidatePath(`/work/${appId}`);
+}
+
+/** Log a week's hours, or a journal line. */
+export async function logWork(appId: string, f: FormData) {
+  await requireUser();
+  const { ensureLog, mondayOf } = await import("@/lib/opportunity");
+  await ensureLog();
+  const kind = str(f, "kind") === "hours" ? "hours" : "journal";
+  const day = isDay(str(f, "day")) ? str(f, "day") : new Date().toISOString().slice(0, 10);
+  if (kind === "hours") {
+    const h = Number(str(f, "hours"));
+    if (!(h >= 0 && h <= 80)) redirect(`/work/${appId}?error=hours#hours`);
+    const week = mondayOf(day);
+    await pool.query(`delete from opportunity_log where application_id = $1 and kind = 'hours' and day = $2`, [appId, week]);
+    await pool.query(`insert into opportunity_log (application_id, kind, day, hours) values ($1, 'hours', $2, $3)`, [appId, week, h]);
+  } else {
+    const text = str(f, "text").slice(0, 1000);
+    if (text.length < 3) redirect(`/work/${appId}#journal`);
+    await pool.query(`insert into opportunity_log (application_id, kind, day, text) values ($1, 'journal', $2, $3)`, [appId, day, text]);
+  }
+  revalidatePath(`/work/${appId}`);
+  redirect(`/work/${appId}#${kind === "hours" ? "hours" : "journal"}`);
+}
+
+export async function deleteWorkLog(appId: string, logId: string) {
+  await requireUser();
+  await pool.query(`delete from opportunity_log where id = $1 and application_id = $2`, [logId, appId]);
+  revalidatePath(`/work/${appId}`);
+}
+
+/** Got a job some other way (a fair, a contact, a site the app doesn't track)? Add it and manage it here. */
+export async function addOwnJob(f: FormData) {
+  const u = await requireUser();
+  const employer = str(f, "employer").slice(0, 120), title = str(f, "title").slice(0, 200);
+  if (!employer || !title) redirect("/work?error=own");
+  const start = isDay(str(f, "start")) ? str(f, "start") : undefined;
+  const { createHash } = await import("node:crypto");
+  const fp = "got:" + createHash("sha256").update(`${employer.toLowerCase()}|${title.toLowerCase()}`).digest("hex").slice(0, 32);
+  const job = await pool.query(
+    `insert into jobs (fingerprint, employer, title, listing_status, last_verified_at, last_seen_at, eligibility, eligibility_reasons, missing_evidence, match_score, match_reasons, starred, notes, category)
+     values ($1,$2,$3,'closed',now(),now(),'manual_verification','[]','[]',0,'[]',true,'A job you got', 'other')
+     on conflict (fingerprint) do update set updated_at = now() returning id`, [fp, employer, title]);
+  const app = await pool.query(
+    `insert into applications (job_id, status, submitted_at, notes) values ($1, 'offer', now(), $2)
+     on conflict (job_id) do update set status = 'offer', updated_at = now() returning id`,
+    [job.rows[0].id, JSON.stringify({ opportunity: { state: "accepted", start, decidedAt: new Date().toISOString() } })]);
+  await audit("own_job_added", {}, u.id);
+  revalidatePath("/work"); revalidatePath("/");
+  redirect(`/work/${app.rows[0].id}`);
+}

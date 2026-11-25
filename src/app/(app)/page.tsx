@@ -8,6 +8,7 @@ import { TodoList } from "@/components/TodoList";
 import { SearchBox } from "@/components/SearchBox";
 import { GoalCard } from "@/components/GoalCard";
 import { ManagerCard } from "@/components/ManagerCard";
+import { WorkCard } from "@/components/WorkCard";
 import { getAppearance } from "@/lib/appearance";
 import { TourBanner } from "@/components/Tour";
 import { Donut, Bars, Progress, PALETTE } from "@/components/charts";
@@ -75,6 +76,8 @@ export default async function Home() {
         <p className="text-sm text-muted mt-2 min-h-5">{s.current_activity ?? (s.last_cycle_at ? `Idle — last search cycle ${timeAgo(s.last_cycle_at)}` : "Idle")}</p>
         <div className="mt-4"><ControlButtons status={s.status} emergency={s.emergency_stop} /></div>
       </section>}
+
+      <WorkCard />
 
       {look.home.manager && <ManagerCard />}
 

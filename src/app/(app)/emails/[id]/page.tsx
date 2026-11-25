@@ -48,7 +48,7 @@ export default async function EmailPage({ params, searchParams }: { params: Prom
   if (!e) notFound();
   const d = await getDetails();
   const feedback = sp.mode === "feedback";
-  const template = replyTemplate(feedback ? "feedback" : e.category, { firstName: d.firstName ?? "", lastName: d.lastName, role: e.title, employer: e.employer, phone: d.phone });
+  const template = replyTemplate(feedback ? "feedback" : sp.mode === "accept" ? "accept_offer" : sp.mode === "decline" ? "decline_offer" : e.category, { firstName: d.firstName ?? "", lastName: d.lastName, role: e.title, employer: e.employer, phone: d.phone });
   const canReply = feedback || !["received", "rejection", "verification", "other"].includes(e.category);
   return (
     <div className="space-y-4">

@@ -137,7 +137,7 @@ async function act(cat: Category, x: { emailId: string; applicationId: string | 
       return emit({ type: "employer_response", level: "warning", title: `📝 Online test from ${emp}`, body: `${role}\n👉 Tap to see the deadline and free practice tests. Do it a day early.`, applicationId: app?.id, url, push });
     case "offer":
       await setStatus("offer", ["submitted", "assessment", "interview", "approved", "awaiting_approval"]);
-      return emit({ type: "employer_response", level: "success", importance: "urgent", title: `🎉 Job offer from ${emp}!`, body: `${role}\n👉 Tap to check the dates fit your visa before saying yes.`, applicationId: app?.id, url, push });
+      return emit({ type: "employer_response", level: "success", importance: "urgent", title: `🎉 Job offer from ${emp}!`, body: `${role}\n👉 Tap to check it against your visa, then accept or decline.`, applicationId: app?.id, url: app ? `/work/${app.id}` : url, push });
     case "rejection":
       await setStatus("rejected", ["submitted", "assessment", "interview", "approved", "awaiting_approval"]);
       return emit({ type: "employer_response", level: "info", importance: "all", title: `💪 ${emp}: not this time`, body: "That's normal. I'm still searching and preparing new applications for you.", applicationId: app?.id, url: app ? `/applications/${app.id}` : "/activity", push: false });

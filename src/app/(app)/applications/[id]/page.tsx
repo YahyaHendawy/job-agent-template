@@ -114,6 +114,10 @@ export default async function AppDetail({ params, searchParams }: { params: Prom
         {from === "later" && <span className="text-muted">Skipped for now. Next one ({left} left)</span>}
       </div>
 
+      {(a.status === "offer" || String(a.notes ?? "").includes('"opportunity"')) && (
+        <Link href={`/work/${a.id}`} className="card p-3 gradient-hero flex items-center gap-2 font-semibold">🎉 <span className="flex-1">Offer: manage it in My job</span><span className="text-accent">→</span></Link>
+      )}
+
       {/* Header + decision: always first */}
       <div className="card p-4">
         <div className="flex flex-wrap items-start gap-2 mb-2">

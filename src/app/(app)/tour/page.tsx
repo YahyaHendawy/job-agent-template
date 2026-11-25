@@ -14,6 +14,8 @@ const STEPS: TourStep[] = [
     body: ["The app can't press Submit, sign in to sites or write your personal answers.", "Solo lists every one of those in order: send, reply, prepare, follow up, set up accounts.", "Applied somewhere else? Log it there in 20 seconds so it's tracked too."] },
   { icon: "📧", title: "Emails: replies are caught for you", href: "/emails", cta: "Open Emails",
     body: ["Connect your job inbox and the app reads employer replies.", "Interviews, tests, offers and rejections update the right application by themselves.", "You get a notification only when something needs you."] },
+  { icon: "💼", title: "My job: when you get an offer", href: "/work", cta: "Open My job",
+    body: ["Offers appear here by themselves, checked against your visa hours, dates and pay.", "Reply with ready-made accept or decline emails, then a getting-ready checklist: contract, right to work, day one.", "In the role: log hours (with term-time warnings) and a work journal that becomes your CV and reference request."] },
   { icon: "🎯", title: "Manager: your career coach", href: "/manager", cta: "Open Manager",
     body: ["This week's orders, in order of impact.", "Hiring season, your scorecard, skills employers want with free courses.", "Monthly career moves, and a Sunday review of your week."] },
   { icon: "☰", title: "Get anywhere in one tap", href: "/", cta: "Try ☰ Jump",

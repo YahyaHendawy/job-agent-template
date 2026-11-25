@@ -60,6 +60,8 @@ export async function schedule() {
   if (hourLondon >= 18) await enqueue("go_ahead_nudge", {}, { dedupeKey: `nudge:${dayLondon}` });
   if (weekdayLondon === "Sun" && hourLondon >= 18) await enqueue("weekly_report", {}, { dedupeKey: `weekly:${dayLondon}` });
   await interviewReminders();
+  // My job: reply-by date, start date, first day, weekly hours, end of the role
+  { const { opportunityReminders } = await import("@/lib/opportunity"); await opportunityReminders(enqueue, emit).catch((e) => console.error("[opportunity]", e)); }
   // Map: look up new job locations (free; cached) every 30 minutes
   await enqueue("geocode", {}, { dedupeKey: `geocode:${Math.floor(Date.now() / 1_800_000)}`, maxAttempts: 1 });
   // Nightly housekeeping (keeps the free database small); runs even while paused

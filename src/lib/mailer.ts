@@ -24,6 +24,10 @@ export function replyTemplate(category: string, ctx: { firstName: string; lastNa
       return `Dear Hiring Team,\n\nThank you for the update${role}. I confirm I have received the assessment and will complete it before the deadline.\n\n${sign}`;
     case "offer":
       return `Dear Hiring Team,\n\nThank you very much for the offer${role}. I am delighted to receive it. Could you please send the full details (start date, contract and next steps) so I can review them?\n\n${sign}`;
+    case "accept_offer":
+      return `Dear Hiring Team,\n\nThank you very much for the offer${role}. I'm delighted to accept.\n\nPlease let me know the next steps, including the contract, my start date and time, where to go on my first day and anything you need from me beforehand (for example right-to-work documents).\n\nI'm looking forward to joining the team.\n\n${sign}`;
+    case "decline_offer":
+      return `Dear Hiring Team,\n\nThank you very much for the offer${role}, and for your time during the process. After careful thought, I've decided to decline, as I've accepted another opportunity that fits my studies.\n\nI really enjoyed learning about the team and hope our paths cross again in the future.\n\n${sign}`;
     case "feedback":
       return `Dear Hiring Team,\n\nThank you for letting me know, and for considering my application${role}. I'd really appreciate any brief feedback on my application or assessment, as it would help me improve for future opportunities.\n\nThank you for your time.\n\n${sign}`;
     default:
