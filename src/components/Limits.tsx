@@ -9,6 +9,8 @@ export async function inboxAddress(): Promise<string | null> {
 
 /** A short "Remember: I can't…" reminder for one screen. */
 export async function LimitsNote({ topic, max = 3 }: { topic: LimitTopic; max?: number }) {
+  const { getAppearance } = await import("@/lib/appearance");
+  if (!(await getAppearance()).reminders) return null;
   const list = limits({ inbox: await inboxAddress() }).filter((l) => l.topics.includes(topic)).slice(0, max);
   if (!list.length) return null;
   return (

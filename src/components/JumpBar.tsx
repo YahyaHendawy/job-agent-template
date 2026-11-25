@@ -8,11 +8,14 @@ type Dest = { label: string; href: string; group: string; keywords?: string };
 /** Every place in the app, so any screen is one tap (or a few letters) away. */
 const DESTS: Dest[] = [
   { group: "Main", label: "🏠 Home", href: "/" },
+  { group: "Main", label: "🧭 Tour of the app", href: "/tour", keywords: "tutorial help guide new start" },
   { group: "Main", label: "💼 Jobs", href: "/jobs" },
+  { group: "Main", label: "🗺️ Map of all jobs", href: "/map", keywords: "where location places pins" },
   { group: "Main", label: "📄 Applications", href: "/applications" },
   { group: "Main", label: "✋ Solo (things only you can do)", href: "/todo", keywords: "to do todo checklist my part" },
   { group: "Main", label: "🎯 Manager (career plan)", href: "/manager", keywords: "career coach orders skills season scorecard goat" },
   { group: "Main", label: "📧 Emails", href: "/emails" },
+  { group: "Main", label: "📊 Analytics (pie charts, weak points)", href: "/analytics", keywords: "stats statistics charts pie weak points cv assessments stages" },
   { group: "Main", label: "📈 Activity log", href: "/activity" },
   { group: "Main", label: "⚙️ Settings", href: "/settings" },
   { group: "Main", label: "🔎 Search everything", href: "/search" },
@@ -52,6 +55,7 @@ const DESTS: Dest[] = [
   { group: "Emails", label: "🎤 Interview emails", href: "/emails?category=interview" },
   { group: "Emails", label: "📝 Online tests", href: "/emails?category=assessment" },
 
+  { group: "Settings", label: "🎨 Appearance (theme, colours, tabs, Home)", href: "/settings/appearance", keywords: "theme colour color font dark light customise customize" },
   { group: "Settings", label: "🪪 Application details (address, visa, dates)", href: "/settings/details" },
   { group: "Settings", label: "📬 Job inbox", href: "/settings/email" },
   { group: "Settings", label: "🧩 Safari autofill", href: "/settings/autofill" },

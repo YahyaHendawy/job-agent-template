@@ -32,6 +32,23 @@ export function ChanceView({ c, compact = false }: { c: Chance; compact?: boolea
           <ul className="space-y-0.5">{couldnt.length ? couldnt.map((x, i) => <li key={i}>👎 {x}</li>) : <li className="text-muted">No obvious obstacles</li>}</ul>
         </div>
       </div>
+      {!compact && c.improve.length > 0 && (
+        <div className="rounded-xl p-3 space-y-2" style={{ background: "color-mix(in srgb, var(--good) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--good) 30%, transparent)" }}>
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="font-semibold" style={{ color: "var(--good)" }}>How to improve your chances</p>
+            {c.potential > c.pct && <p className="text-xs tabular-nums">~{c.pct}% → <b style={{ color: "var(--good)" }}>~{c.potential}%</b> if you do these</p>}
+          </div>
+          <ol className="space-y-1.5 text-sm">
+            {c.improve.map((x, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="w-5 h-5 rounded-full grid place-items-center text-[11px] font-bold shrink-0" style={{ background: "var(--good)", color: "#fff" }}>{i + 1}</span>
+                <span className="flex-1">{x.text}{x.href && <> <a href={x.href} className="text-accent font-semibold whitespace-nowrap">Do it →</a></>}</span>
+                <span className="text-xs text-muted tabular-nums shrink-0">+{Math.round((x.gain - 1) * 100)}%</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
       {!compact && <p className="text-xs text-muted">A rough estimate from this job's details, your CV, visa fit, timing and your answers. Employers don&apos;t publish acceptance rates, so treat it as a guide. Raise it by writing strong answers, applying early and closing the gaps above.</p>}
     </div>
   );

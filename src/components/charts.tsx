@@ -30,7 +30,7 @@ export function Donut({ segments, size = 132, thickness = 16, center, sub }: { s
           <li key={s.label} className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: s.color }} />
             <span className="text-muted truncate">{s.label}</span>
-            <span className="font-semibold tabular-nums ml-auto pl-2">{s.value}</span>
+            <span className="font-semibold tabular-nums ml-auto pl-2">{s.value}{total > 0 && <span className="text-muted font-normal text-xs"> · {Math.round((s.value / total) * 100)}%</span>}</span>
           </li>
         ))}
       </ul>

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { getAppearance, appearanceCss, DEFAULT_APPEARANCE } from "@/lib/appearance";
 
 export const metadata: Metadata = {
   title: "Job Agent",
@@ -40,10 +41,14 @@ function ConnectDatabase() {
   );
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const look = NEEDS_DB ? DEFAULT_APPEARANCE : await getAppearance();
+  const css = appearanceCss(look);
   return (
     <html lang="en-GB">
       <body className="min-h-dvh font-sans">
+        {/* Saved look from Settings → Appearance (always present so the live preview can update it) */}
+        <style id="appearance" dangerouslySetInnerHTML={{ __html: css }} />
         <div className="aura-bg" aria-hidden><span /><span /><span /></div>
         <div className="status-cover" aria-hidden />
         {NEEDS_DB ? <ConnectDatabase /> : children}

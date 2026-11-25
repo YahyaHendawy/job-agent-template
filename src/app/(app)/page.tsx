@@ -8,10 +8,13 @@ import { TodoList } from "@/components/TodoList";
 import { SearchBox } from "@/components/SearchBox";
 import { GoalCard } from "@/components/GoalCard";
 import { ManagerCard } from "@/components/ManagerCard";
+import { getAppearance } from "@/lib/appearance";
+import { TourBanner } from "@/components/Tour";
 import { Donut, Bars, Progress, PALETTE } from "@/components/charts";
 import { CountUp } from "@/components/CountUp";
 
 export default async function Home() {
+  const look = await getAppearance();
   const PS = await loadPersona();
   const shown = [...new Set([PS.home.country, ...PS.markets.map((m) => m.code)])].filter((c) => PS.markets.some((m) => m.code === c)).slice(0, 4);
   const TZ = PS.timeZone;
@@ -54,12 +57,13 @@ export default async function Home() {
 
   return (
     <div className="space-y-4">
+      <TourBanner />
       <header className="pt-1">
-        <p className="hud-label mb-1"><span className="blink" style={{ color: "var(--accent)" }}>●</span> Systems online · <b>{today}</b></p>
-        <h1 className="text-3xl font-black tracking-tight"><span className="aura-text">Greetings{who ? `, ${who}` : ""}.</span></h1>
+        {look.showDate && <p className="hud-label mb-1"><span className="blink" style={{ color: "var(--accent)" }}>●</span> Systems online · <b>{today}</b></p>}
+        <h1 className="text-3xl font-black tracking-tight"><span className="aura-text">{look.greeting || "Greetings"}{who ? `, ${who}` : ""}.</span></h1>
       </header>
-      <SearchBox action="/search" placeholder="Search jobs, applications, emails, activity…" />
-      <section className="card p-4 gradient-hero" data-jump="Status">
+      {look.home.search && <SearchBox action="/search" placeholder="Search jobs, applications, emails, activity…" />}
+      {look.home.status && <section className="card p-4 gradient-hero" data-jump="Status">
         <div className="flex items-center gap-2">
           <span className="relative flex w-3 h-3">
             {label === "Running" && <span className="absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping" style={{ background: color }} />}
@@ -70,15 +74,15 @@ export default async function Home() {
         </div>
         <p className="text-sm text-muted mt-2 min-h-5">{s.current_activity ?? (s.last_cycle_at ? `Idle — last search cycle ${timeAgo(s.last_cycle_at)}` : "Idle")}</p>
         <div className="mt-4"><ControlButtons status={s.status} emergency={s.emergency_stop} /></div>
-      </section>
+      </section>}
 
-      <ManagerCard />
+      {look.home.manager && <ManagerCard />}
 
-      <TodoList max={3} />
+      {look.home.needs && <TodoList max={3} />}
 
-      <GoalCard />
+      {look.home.goal && <GoalCard />}
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {look.home.tiles && <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           ["Found today", k.today, "/jobs?sort=new", "🔎"], ["Open opportunities", k.open, "/jobs", "💼"],
           ["To decide / going ahead", k.prepared, "/applications", "🚀"], ["Submitted", k.submitted, "/applications?tab=submitted", "📨"],
@@ -89,9 +93,9 @@ export default async function Home() {
             <p className="text-xs text-muted font-semibold">{l as string}</p>
           </Link>
         ))}
-      </section>
+      </section>}
 
-      <details className="card p-4 group" data-jump="Progress">
+      {look.home.progress && <details className="card p-4 group" data-jump="Progress">
         <summary className="font-bold text-lg cursor-pointer select-none flex items-center justify-between">Your progress <span className="text-xs text-muted font-normal">charts · tap to {`open`}</span></summary>
         <div className="space-y-4 mt-4">
         <div className="grid md:grid-cols-2 gap-5">
@@ -123,10 +127,10 @@ export default async function Home() {
           <Bars data={days.rows} />
         </div>
         </div>
-      </details>
+      </details>}
 
 
-      <section>
+      {look.home.matches && <section>
         <div className="flex items-baseline justify-between mb-2"><h2 className="font-bold">Top matches</h2><Link href="/jobs" className="text-sm text-accent font-semibold">All jobs</Link></div>
         <div className="space-y-2">
           {top.rows.map((j) => (
@@ -138,12 +142,12 @@ export default async function Home() {
           ))}
           {top.rowCount === 0 && <p className="text-sm text-muted">No matches yet — the first search cycle runs automatically.</p>}
         </div>
-      </section>
+      </section>}
 
-      <section>
+      {look.home.activity && <section>
         <div className="flex items-baseline justify-between mb-2"><h2 className="font-bold">Recent activity</h2><Link href="/activity" className="text-sm text-accent font-semibold">All activity</Link></div>
         <LiveFeed initial={JSON.parse(JSON.stringify(events.rows))} limit={8} />
-      </section>
+      </section>}
     </div>
   );
 }

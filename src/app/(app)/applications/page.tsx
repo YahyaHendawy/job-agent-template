@@ -10,6 +10,8 @@ import { readNotes } from "@/lib/goahead";
 import { VerdictView } from "@/components/Verdict";
 import { ChanceChip } from "@/components/Chance";
 import { chance } from "@/lib/chance";
+import { applicantsModel } from "@/lib/applicants";
+import { ApplicantsCounter } from "@/components/Applicants";
 import { unanswered } from "@/lib/written";
 
 const TABS: [string, string, string[]][] = [
@@ -125,7 +127,7 @@ export default async function Applications({ searchParams }: { searchParams: Pro
                   : <> · <span style={{ color: d <= 7 ? "var(--bad)" : undefined, fontWeight: d <= 7 ? 600 : undefined }}>{d === 0 ? "closes today" : d === 1 ? "closes tomorrow" : `closes in ${d} days`}</span></>; })()}
               </p>
             </div>
-            <div className="mb-1.5"><ChanceChip c={a.ch} /></div>
+            <div className="mb-1.5 flex flex-wrap gap-1.5"><ChanceChip c={a.ch} /><ApplicantsCounter m={applicantsModel(a)} compact /></div>
             {["awaiting_approval", "draft", "preparing", "approved"].includes(a.status) ? <VerdictView v={a.v} compact />
               : a.status === "declined" ? <p className="text-xs text-muted">👎 {readNotes(a.notes).decision?.reasonText ?? "Not doing"} · decided {timeAgo(readNotes(a.notes).decision?.at ?? a.updated_at)}</p>
               : <Stepper status={a.status} compact />}

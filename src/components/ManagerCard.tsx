@@ -18,7 +18,7 @@ export async function ManagerCard() {
           </li>
         ))}
       </ol>
-      <Link href="/manager" className="btn btn-ghost w-full mt-3 !text-sm">Full plan: orders, scorecard, skills, monthly moves →</Link>
+      <div className="flex gap-2 mt-3"><Link href="/manager" className="btn btn-ghost flex-1 !text-sm">Full plan →</Link><Link href="/analytics" className="btn btn-ghost flex-1 !text-sm">📊 Analytics →</Link></div>
     </section>
   );
 }

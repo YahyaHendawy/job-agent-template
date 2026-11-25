@@ -48,7 +48,7 @@ export default async function Jobs({ searchParams }: { searchParams: SP }) {
 
   return (
     <div>
-      <PageHeader title="Jobs" subtitle={`${matched} opportunities${matched > 500 ? " (top 500 listed)" : ""}`} right={<Link href="/jobs/new" className="btn btn-primary !text-sm">+ Add by link</Link>} />
+      <PageHeader title="Jobs" subtitle={`${matched} opportunities${matched > 500 ? " (top 500 listed)" : ""}`} right={<div className="flex gap-2"><Link href={`/map${Object.keys(sp).length ? `?${new URLSearchParams(sp)}` : ""}`} className="btn btn-ghost !text-sm">🗺️ Map</Link><Link href="/jobs/new" className="btn btn-primary !text-sm">+ Add</Link></div>} />
       <section className="card p-3 mb-3">
         <div className="flex h-3 rounded-full overflow-hidden">
           {(["eligible", "potentially_eligible", "manual_verification", "ineligible"] as const).map((k) => {

@@ -6,6 +6,8 @@ import { Score, EligChip, CATEGORY, fmtDate, timeAgo } from "@/components/ui";
 import { prepareApplicationAction, toggleJobFlag } from "@/app/actions";
 import { ChanceView } from "@/components/Chance";
 import { chance } from "@/lib/chance";
+import { applicantsModel } from "@/lib/applicants";
+import { ApplicantsCounter } from "@/components/Applicants";
 import { loadPersona } from "@/lib/persona";
 
 export default async function Job({ params }: { params: Promise<{ id: string }> }) {
@@ -59,7 +61,7 @@ export default async function Job({ params }: { params: Promise<{ id: string }> 
 
       <section className="card p-4">
         <h2 className="font-bold mb-3">Chance of getting it</h2>
-        <ChanceView c={chance({ ...j, status: j.app_status, missing_info: j.missing_evidence })} />
+        <div className="space-y-3"><ApplicantsCounter m={applicantsModel(j)} /><ChanceView c={chance({ ...j, status: j.app_status, missing_info: j.missing_evidence })} /></div>
       </section>
 
       <section className="card p-4">

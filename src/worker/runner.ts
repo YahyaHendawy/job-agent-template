@@ -18,7 +18,7 @@ import { dailySummary, weeklyReport, goAheadNudge } from "./summary";
 import { cleanup } from "./cleanup";
 import { recordUsage, guardFreePlan } from "@/lib/usage";
 
-const ALWAYS_TYPES = ["push_event", "noop", "check_inbox", "cleanup"]; // inbox keeps being watched even while paused // run even while paused (notifications must still flow)
+const ALWAYS_TYPES = ["push_event", "noop", "check_inbox", "cleanup", "geocode"]; // inbox keeps being watched even while paused // run even while paused (notifications must still flow)
 
 const handlers: Record<string, (t: Task) => Promise<void>> = {
   search_cycle: (t) => startCycle(t.payload.slot, t.payload.trigger ?? "schedule"),
@@ -34,6 +34,7 @@ const handlers: Record<string, (t: Task) => Promise<void>> = {
   prepare_application: (t) => prepareApplication(t.payload.applicationId),
   push_event: async (t) => { await deliverEvent(t.payload.eventId); },
   cleanup: async () => { await cleanup(); },
+  geocode: async () => { const { geocodePending } = await import("@/lib/geo"); await geocodePending(); },
   noop: async () => {},
 };
 
@@ -59,6 +60,8 @@ export async function schedule() {
   if (hourLondon >= 18) await enqueue("go_ahead_nudge", {}, { dedupeKey: `nudge:${dayLondon}` });
   if (weekdayLondon === "Sun" && hourLondon >= 18) await enqueue("weekly_report", {}, { dedupeKey: `weekly:${dayLondon}` });
   await interviewReminders();
+  // Map: look up new job locations (free; cached) every 30 minutes
+  await enqueue("geocode", {}, { dedupeKey: `geocode:${Math.floor(Date.now() / 1_800_000)}`, maxAttempts: 1 });
   // Nightly housekeeping (keeps the free database small); runs even while paused
   if (hourLondon >= 3) await enqueue("cleanup", {}, { dedupeKey: `cleanup:${dayLondon}`, maxAttempts: 2 });
   await guardFreePlan().catch((e) => console.error("[guard]", e));

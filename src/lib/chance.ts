@@ -11,7 +11,8 @@ export type ChanceInput = {
   source_kind?: string | null; answers?: { evidence?: string; requirement?: string }[] | null; status?: string | null;
   written?: { answer?: string }[] | null; unanswered?: number | null;
 };
-export type Chance = { pct: number; label: string; tone: "good" | "ok" | "warn" | "bad"; could: string[]; couldnt: string[]; basis: string; stage?: string };
+export type Improve = { text: string; gain: number; href?: string };
+export type Chance = { pct: number; label: string; tone: "good" | "ok" | "warn" | "bad"; could: string[]; couldnt: string[]; basis: string; stage?: string; improve: Improve[]; potential: number };
 
 const AGG = ["reed", "jooble", "adzuna", "careerjet"];
 const days = (d?: string | Date | null) => (d ? (new Date(d).getTime() - Date.now()) / 86400000 : null);
@@ -93,11 +94,31 @@ export function chance(j: ChanceInput): Chance {
     case "withdrawn": pct = 0; stage = "Withdrawn"; break;
   }
 
+  // What you can do about it, biggest effect first (gain = multiplier on your chance)
+  const imp: Improve[] = [];
+  const open = !["offer", "rejected", "withdrawn", "declined"].includes(j.status ?? "") && !(dl != null && dl < 0);
+  if (open) {
+    if (j.status === "assessment") imp.push({ text: "Do 2–3 free practice tests of the same type first, and take the real one a day early in a quiet room", gain: 1.5, href: "#stage-help" });
+    else if (j.status === "interview") imp.push({ text: "Prepare 4–5 STAR stories from your projects, research them for 15 minutes, practise out loud and send a thank-you email after", gain: 1.4, href: "#stage-help" });
+    else {
+      if ((j.unanswered ?? 0) > 0) imp.push({ text: `Write your ${j.unanswered} answer${j.unanswered! > 1 ? "s" : ""} in your own words: specific, with one real example each`, gain: 1.25, href: "#answers" });
+      if (gaps.length) imp.push({ text: `Close the gap they ask about (“${gaps[0].replace("Requirement without evidence: ", "").slice(0, 70)}…”): mention related coursework or a project, or do a short free course and add it to your CV`, gain: 1.2, href: "/manager#skills" });
+      if (score < 60) imp.push({ text: "Lead your answers with the 2–3 things they ask for that you do have, using their words", gain: 1.15, href: "#answers" });
+      if (j.source_kind && !AGG.includes(j.source_kind)) imp.push({ text: "Stand out from the crowd: email the recruiter if a contact is published, or send a short LinkedIn message after applying", gain: 1.1, href: "#recruiter" });
+      if (["summer_internship", "placement"].includes(j.category ?? "")) imp.push({ text: "Point to one hands-on project with photos or a GitHub link: it's what separates students without experience", gain: 1.15, href: "/manager#moves" });
+      if (j.eligibility !== "eligible") imp.push({ text: isUkStudent() ? "Check your visa fit with your university now, and state clearly on the form that the role fits your Student visa" : "Check the eligibility point now and state your situation clearly on the form", gain: 1.15 });
+      if (!["submitted", "submitting"].includes(j.status ?? "")) imp.push({ text: dl != null && dl <= 7 ? "Send it today: it closes soon" : "Apply this week: many employers read applications as they arrive and close early", gain: 1.15, href: "/todo#send" });
+    }
+  }
+  imp.sort((a, b) => b.gain - a.gain);
+
   pct = Math.max(0, Math.min(j.status === "offer" ? 100 : 85, pct));
   pct = pct < 10 ? Math.max(pct > 0 ? 1 : 0, Math.round(pct)) : Math.round(pct / 5) * 5;
   const [label, tone]: [string, Chance["tone"]] =
     j.status === "offer" ? ["Offer", "good"] : pct === 0 ? ["Closed", "bad"] : pct < 8 ? ["Long shot", "bad"] : pct < 18 ? ["Possible", "warn"] : pct < 35 ? ["Good chance", "ok"] : ["Strong chance", "good"];
-  return { pct, label, tone, could: [...new Set(could)].slice(0, 5), couldnt: [...new Set(couldnt)].slice(0, 5), basis, stage };
+  const potRaw = imp.slice(0, 5).reduce((p, x) => p * x.gain, pct || 0);
+  const potential = pct === 0 || pct === 100 ? pct : Math.min(85, potRaw < 10 ? Math.round(potRaw) : Math.round(potRaw / 5) * 5);
+  return { pct, label, tone, could: [...new Set(could)].slice(0, 5), couldnt: [...new Set(couldnt)].slice(0, 5), basis, stage, improve: imp.slice(0, 5), potential };
 }
 
 export const chanceColor = (t: Chance["tone"]) => (t === "good" ? "var(--good)" : t === "ok" ? "var(--accent)" : t === "warn" ? "var(--warn)" : "var(--bad)");

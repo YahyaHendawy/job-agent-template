@@ -5,15 +5,19 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/", label: "Home", d: "M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" },
   { href: "/jobs", label: "Jobs", d: "M9 6V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm2 0h2V5h-2z" },
-  { href: "/applications", label: "Applications", d: "M7 3h7l5 5v12a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm6 1.5V9h4.5M8 13h8M8 17h6" },
+  { href: "/map", label: "Map", d: "M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zm0 0v14m6-12v14" },
+  { href: "/applications", label: "Applications", short: "Apps", d: "M7 3h7l5 5v12a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm6 1.5V9h4.5M8 13h8M8 17h6" },
   { href: "/todo", label: "Solo", d: "M9 4h6v3H9zM8 5.5H5.5V21h13V5.5H16M8.5 14l2.5 2.5 4.5-5" },
   { href: "/emails", label: "Emails", d: "M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zm0 1 8 6 8-6" },
+  { href: "/analytics", label: "Analytics", desktopOnly: true, d: "M12 3v9h9A9 9 0 1 1 12 3zm3 0a6 6 0 0 1 6 6h-6z" },
   { href: "/manager", label: "Manager", desktopOnly: true, d: "M12 3 4 7v5c0 4.5 3.4 8.4 8 9 4.6-.6 8-4.5 8-9V7zm-3 9 2 2 4-4" },
+  { href: "/compare", label: "Compare", desktopOnly: true, d: "M7 4v16M17 4v16M3 8h8M13 16h8" },
   { href: "/activity", label: "Activity", desktopOnly: true, d: "M3 12h4l3-8 4 16 3-8h4" },
   { href: "/settings", label: "Settings", d: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm7.4-3a7.4 7.4 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-2-1.2L14.5 3h-5l-.4 2.6a7.6 7.6 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7.4 7.4 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 2 1.2l.4 2.6h5l.4-2.6a7.6 7.6 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z" },
 ];
 
-export function Nav({ approvals, todo = 0 }: { approvals: number; todo?: number }) {
+export function Nav({ approvals, todo = 0, tabs, labels = true }: { approvals: number; todo?: number; tabs?: string[]; labels?: boolean }) {
+  const phone = TABS.filter((t) => (tabs?.length ? tabs.includes(t.href) : !("desktopOnly" in t)));
   const badge = (h: string) => (h === "/applications" ? approvals : h === "/todo" ? todo : 0);
   const path = usePathname();
   const active = (h: string) => (h === "/" ? path === "/" : path.startsWith(h));
@@ -30,10 +34,10 @@ export function Nav({ approvals, todo = 0 }: { approvals: number; todo?: number 
         ))}
       </aside>
       <nav className="md:hidden pin-bottom z-40 border-t border-line glass safe-bottom">
-        <div className="grid grid-cols-6">
-          {TABS.filter((t) => !("desktopOnly" in t)).map((t) => (
-            <Link key={t.href} href={t.href} className={`relative flex flex-col items-center gap-0.5 pt-2 pb-1 text-[10.5px] font-semibold ${active(t.href) ? "tab-active" : "text-muted"}`}>
-              <Icon d={t.d} />{t.label}
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${phone.length}, minmax(0, 1fr))` }}>
+          {phone.map((t) => (
+            <Link key={t.href} href={t.href} className={`relative flex flex-col items-center gap-0.5 pt-2 pb-1 text-[10px] font-semibold ${active(t.href) ? "tab-active" : "text-muted"}`}>
+              <Icon d={t.d} />{labels && ("short" in t && phone.length > 5 ? t.short : t.label)}
               {badge(t.href) > 0 && (
                 <span className="absolute top-1 right-[22%] min-w-4 h-4 px-1 rounded-full bg-bad text-white text-[10px] grid place-items-center">{badge(t.href) > 99 ? "99+" : badge(t.href)}</span>
               )}

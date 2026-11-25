@@ -433,3 +433,58 @@ export async function toggleMove(id: string) {
 export async function toggleLearned(key: string) {
   await saveTracks((v) => { v.learned = v.learned.includes(key) ? v.learned.filter((x) => x !== key) : [...v.learned, key]; });
 }
+
+/** Settings → Appearance: save the whole look (validated against the defaults). */
+export async function saveAppearance(json: string) {
+  await requireUser();
+  const { DEFAULT_APPEARANCE, ALL_TABS, THEMES } = await import("@/lib/look");
+  let v: any = {};
+  try { v = JSON.parse(json); } catch { return; }
+  const D = DEFAULT_APPEARANCE as any;
+  const out: any = {};
+  for (const k of Object.keys(D)) {
+    if (k === "home") { out.home = Object.fromEntries(Object.keys(D.home).map((h) => [h, typeof v.home?.[h] === "boolean" ? v.home[h] : D.home[h]])); continue; }
+    if (k === "tabs") { const t = Array.isArray(v.tabs) ? v.tabs.filter((x: string) => ALL_TABS.some((a) => a.href === x)) : []; out.tabs = t.length >= 2 ? t.slice(0, 7) : D.tabs; continue; }
+    if (typeof D[k] === "boolean") out[k] = typeof v[k] === "boolean" ? v[k] : D[k];
+    else out[k] = typeof v[k] === "string" ? String(v[k]).slice(0, 40) : D[k];
+  }
+  if (!(out.theme in THEMES)) out.theme = D.theme;
+  if (out.accent && !/^#[0-9a-f]{6}$/i.test(out.accent)) out.accent = "";
+  await pool.query(`insert into settings (key, value, updated_at) values ('appearance', $1, now()) on conflict (key) do update set value = excluded.value, updated_at = now()`, [JSON.stringify(out)]);
+  revalidatePath("/", "layout");
+}
+
+/** Email the recruiter about an application (only when the owner taps Send). Optionally attaches the tailored CV. */
+export async function emailRecruiter(appId: string, f: FormData) {
+  const u = await requireUser();
+  const to = str(f, "to").toLowerCase(), subject = str(f, "subject").slice(0, 200), text = str(f, "text").slice(0, 8000);
+  const { findContacts } = await import("@/lib/contacts");
+  const a = (await pool.query(`select a.id, a.status, a.cv_markdown, j.description, j.employer, j.title from applications a join jobs j on j.id = a.job_id where a.id = $1`, [appId])).rows[0];
+  if (!a) return;
+  // Only to a published contact for this application
+  const { contacts } = await findContacts(a);
+  if (!contacts.some((c) => c.email === to) || subject.length < 3 || text.length < 20) redirect(`/applications/${appId}?mail=invalid#recruiter`);
+  await guarded("email_recruiter", { appId });
+  const attachments: { filename: string; content: Buffer }[] = [];
+  if (f.get("attachCv") && a.cv_markdown) {
+    const { cvPdf } = await import("@/lib/cvpdf");
+    const name = (await pool.query(`select data->>'name' n from profile where id = 1`)).rows[0]?.n ?? "CV";
+    attachments.push({ filename: `${String(name).replace(/[^A-Za-z ]/g, "").trim().replace(/ /g, "_") || "CV"}_CV.pdf`, content: Buffer.from(await cvPdf(a.cv_markdown, `${name} - CV`)) });
+  }
+  const det = (await pool.query(`select value from settings where key = 'applicationDetails'`)).rows[0]?.value ?? {};
+  try {
+    const { sendEmail } = await import("@/lib/mailer");
+    await sendEmail({ to, subject, text, attachments, fromName: [det.firstName, det.lastName].filter(Boolean).join(" ") || undefined });
+  } catch { redirect(`/applications/${appId}?mail=failed#recruiter`); }
+  const { setNote } = await import("@/lib/goahead");
+  await setNote(appId, { recruiterEmail: { to, at: new Date().toISOString(), cv: attachments.length > 0 } });
+  await audit("recruiter_emailed", { appId }, u.id);
+  // "Email instead of the form": counts as sent
+  if (f.get("asApplication") && ["approved", "awaiting_approval"].includes(a.status)) {
+    await pool.query(`update applications set status = 'submitted', submitted_at = now(), submission_evidence = $2, updated_at = now() where id = $1`,
+      [appId, JSON.stringify({ kind: "owner_reported", reference: `Emailed to ${to}`, at: new Date().toISOString() })]);
+  }
+  await emit({ type: "application_submitted", level: "success", title: `✉️ Emailed ${to}`, body: `About ${a.title} at ${a.employer}${attachments.length ? " (CV attached)" : ""}.`, applicationId: appId, push: false });
+  revalidatePath(`/applications/${appId}`);
+  redirect(`/applications/${appId}?mail=sent#recruiter`);
+}

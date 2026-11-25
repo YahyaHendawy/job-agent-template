@@ -8,6 +8,9 @@ import { verdict } from "@/lib/verdict";
 import { VerdictView } from "@/components/Verdict";
 import { ChanceView, ChanceChip } from "@/components/Chance";
 import { chance } from "@/lib/chance";
+import { applicantsModel } from "@/lib/applicants";
+import { ApplicantsCounter } from "@/components/Applicants";
+import { RecruiterEmail } from "@/components/RecruiterEmail";
 import { APP_STATUS, CATEGORY, ELIG, fmtTime, fmtDate, timeAgo } from "@/components/ui";
 import { markSubmitted, setApplicationStatus, decideYes, decideNo, decideLater, reconsider } from "@/app/actions";
 import { Markdown } from "@/components/Markdown";
@@ -61,9 +64,9 @@ function Step({ done, warn, title, sub, href, cta }: { done: boolean | null; war
   );
 }
 
-export default async function AppDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string; decided?: string }> }) {
+export default async function AppDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string; decided?: string; mail?: string }> }) {
   const { id } = await params;
-  const { from, decided } = await searchParams;
+  const { from, decided, mail } = await searchParams;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const r = await pool.query(
     `select a.*, j.title, j.employer, j.application_url, j.source_url, j.id as job_id, j.category, j.country, j.description, j.location, j.match_score,
@@ -117,6 +120,7 @@ export default async function AppDetail({ params, searchParams }: { params: Prom
           <span className="chip">{APP_STATUS[a.status] ?? a.status}</span>
           <span className="chip font-semibold" style={{ color: v.tone === "good" ? "var(--good)" : v.tone === "bad" ? "var(--bad)" : v.tone === "warn" ? "var(--warn)" : "var(--accent)" }}>{v.call}</span>
           <ChanceChip c={ch} />
+          <ApplicantsCounter m={applicantsModel(a)} compact />
           {a.match_score != null && <span className="chip ml-auto">{a.match_score}% match</span>}
           <CompareToggle jobId={a.job_id} label={a.employer} />
         </div>
@@ -164,6 +168,7 @@ export default async function AppDetail({ params, searchParams }: { params: Prom
                 sub={notes.reusedAnswers ? `${notes.reusedAnswers} reused from answers you wrote before` : unanswered.length ? "About 5 minutes each; employers check these for AI" : undefined} href="#answers" cta="Write" />
               <Step done={missingDetails === 0} title={missingDetails ? `Fill in ${missingDetails} application detail${missingDetails > 1 ? "s" : ""}` : "Your application details are complete"} href="/settings/details" cta="Fill in" />
               <Step done={false} title="Send it: on your Mac, tap Apply now" sub="Safari opens the form and Job Agent fills everything in. On iPhone, use the Apply Kit below." href={applyHref ?? undefined} cta="Apply now ↗" />
+              <Step done={!!notes.recruiterEmail} title={notes.recruiterEmail ? "Recruiter emailed" : "Optional: email the recruiter too"} sub="Your choice: the form, an email, or both" href="#recruiter" cta="Email" />
               <Step done={false} title="Done: recorded by itself" sub="The confirmation page or the employer's confirmation email marks it as submitted. No need to do anything." />
             </ol>
             {applyHref && <a href={applyHref} target="_blank" rel="noopener noreferrer" className="btn btn-primary w-full mt-3 !py-3 !text-base">Apply now ↗</a>}
@@ -188,7 +193,7 @@ export default async function AppDetail({ params, searchParams }: { params: Prom
 
       {["awaiting_approval", "approved"].includes(a.status) && <LimitsNote topic="apply" max={4} />}
 
-      {!pre && <StageGuide app={a} rejectionEmailId={rejection} />}
+      {!pre && <div id="stage-help" className="scroll-mt-20"><StageGuide app={a} rejectionEmailId={rejection} /></div>}
 
       <Section n={++n} title="At a glance">
         <dl className="divide-y divide-line">
@@ -214,7 +219,9 @@ export default async function AppDetail({ params, searchParams }: { params: Prom
 
       <Section n={++n} title="Should you apply?"><VerdictView v={v} /></Section>
 
-      <Section n={++n} title="Chance of getting it"><ChanceView c={ch} /></Section>
+      {!["declined", "withdrawn"].includes(a.status) && <Section n={++n} title="Email the recruiter" id="recruiter"><RecruiterEmail app={a} flash={mail} /></Section>}
+
+      <Section n={++n} title="Chance of getting it"><div className="space-y-3"><ApplicantsCounter m={applicantsModel(a)} /><ChanceView c={ch} /></div></Section>
 
       <Section n={++n} title="Visa & eligibility" right={<span className="chip" style={{ color: ELIG[a.eligibility]?.color }}>{ELIG[a.eligibility]?.label}</span>}>
         <ul className="space-y-1.5 text-sm">{((a.eligibility_reasons as string[]) ?? []).map((x, i) => <li key={i}>• {x}</li>)}</ul>

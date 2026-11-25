@@ -30,3 +30,12 @@ export function replyTemplate(category: string, ctx: { firstName: string; lastNa
       return `Dear Hiring Team,\n\nThank you for getting in touch${role}. \n\n${sign}`;
   }
 }
+
+/** A new email (not a reply) from the job inbox, optionally with attachments. Only called when the owner taps Send. */
+export async function sendEmail(opts: { to: string; subject: string; text: string; fromName?: string; attachments?: { filename: string; content: Buffer }[] }) {
+  const creds = await imapCreds();
+  if (!creds) throw new Error("Job inbox is not connected");
+  const t = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user: creds.user, pass: creds.pass } });
+  const info = await t.sendMail({ from: opts.fromName ? { name: opts.fromName, address: creds.user } : creds.user, to: opts.to, subject: opts.subject, text: opts.text, attachments: opts.attachments });
+  return info.messageId;
+}
