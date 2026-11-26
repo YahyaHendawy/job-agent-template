@@ -6,6 +6,9 @@ import { loadPersona, persona, homeCitySql, marketOptions } from "@/lib/persona"
 import { PageHeader, Score, EligChip, CATEGORY, ELIG, fmtDate, timeAgo } from "@/components/ui";
 import { CountUp } from "@/components/CountUp";
 import { ListControls } from "@/components/ListControls";
+import { chance, CHANCE_FLAGS_SQL } from "@/lib/chance";
+import { ChanceChip } from "@/components/Chance";
+import { unanswered } from "@/lib/written";
 
 type SP = Promise<Record<string, string | undefined>>;
 
@@ -41,9 +44,14 @@ export default async function Jobs({ searchParams }: { searchParams: SP }) {
   };
   const order = ORDER[sp.sort ?? "score"] ?? ORDER.score;
   const r = await pool.query(
-    `select j.id, j.title, j.employer, j.location, j.country, j.category, j.match_score, j.eligibility, j.deadline, j.salary, j.discovered_at, j.last_verified_at, j.listing_status, j.starred, count(*) over()::int as n_all
-     from jobs j left join sources s on s.id = j.source_id where ${where.join(" and ")} order by ${order} limit 500`, args);
-  const matched = r.rows[0]?.n_all ?? 0;
+    `select j.id, j.title, j.employer, j.location, j.country, j.category, j.match_score, j.eligibility, j.deadline, j.salary, j.discovered_at, j.last_verified_at, j.listing_status, j.starred, count(*) over()::int as n_all,
+            ${CHANCE_FLAGS_SQL} as description, j.missing_evidence, s.kind as source_kind, a.id as app_id, a.status, a.answers, a.missing_info, a.written, a.form_questions
+     from jobs j left join sources s on s.id = j.source_id left join applications a on a.job_id = j.id where ${where.join(" and ")} order by ${order} limit 500`, args);
+  // Chance of getting each one (worked out from flags found in the database, not whole adverts)
+  let rows = r.rows.map((j) => ({ ...j, ch: chance({ ...j, missing_info: j.missing_info ?? j.missing_evidence, unanswered: j.app_id ? unanswered(j).length : null }) }));
+  if (sp.chance) rows = rows.filter((j) => sp.chance === "strong" ? j.ch.pct >= 18 : sp.chance === "possible" ? j.ch.pct >= 8 && j.ch.pct < 18 : j.ch.pct < 8);
+  if (sp.sort === "chance") rows.sort((x, y) => y.ch.pct - x.ch.pct || (y.match_score ?? 0) - (x.match_score ?? 0));
+  const matched = sp.chance ? rows.length : r.rows[0]?.n_all ?? 0;
   const total = (await pool.query(`select count(*)::int n from jobs where not dismissed and listing_status = 'open' and eligibility <> 'ineligible'`)).rows[0].n;
 
   return (
@@ -52,25 +60,26 @@ export default async function Jobs({ searchParams }: { searchParams: SP }) {
       <section className="card p-3 mb-3">
         <div className="flex h-3 rounded-full overflow-hidden">
           {(["eligible", "potentially_eligible", "manual_verification", "ineligible"] as const).map((k) => {
-            const n = r.rows.filter((j) => j.eligibility === k).length;
-            return n ? <div key={k} className="bar-grow" style={{ width: `${(n / Math.max(r.rowCount!, 1)) * 100}%`, background: ELIG[k].color }} title={`${ELIG[k].label}: ${n}`} /> : null;
+            const n = rows.filter((j) => j.eligibility === k).length;
+            return n ? <div key={k} className="bar-grow" style={{ width: `${(n / Math.max(rows.length, 1)) * 100}%`, background: ELIG[k].color }} title={`${ELIG[k].label}: ${n}`} /> : null;
           })}
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs">
           {(["eligible", "potentially_eligible", "manual_verification", "ineligible"] as const).map((k) => (
-            <span key={k} className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ background: ELIG[k].color }} />{ELIG[k].label} <b className="tabular-nums"><CountUp value={r.rows.filter((j) => j.eligibility === k).length} /></b></span>
+            <span key={k} className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ background: ELIG[k].color }} />{ELIG[k].label} <b className="tabular-nums"><CountUp value={rows.filter((j) => j.eligibility === k).length} /></b></span>
           ))}
         </div>
       </section>
       <div className="mb-3"><LimitsNote topic="jobs" max={2} /></div>
       <ListControls action="/jobs" params={sp} placeholder="Search title, employer, location" count={matched} total={total} shown={r.rowCount ?? 0}
-        sorts={[["score", "Best match"], ["score_asc", "Lowest match"], ["new", "Newest found"], ["old", "Oldest found"], ["deadline", "Deadline: soonest"],
+        sorts={[["score", "Best match"], ["chance", "Best chance of getting it"], ["score_asc", "Lowest match"], ["new", "Newest found"], ["old", "Oldest found"], ["deadline", "Deadline: soonest"],
           ["deadline_desc", "Deadline: latest"], ["employer", "Employer A–Z"], ["title", "Job title A–Z"], ["verified", "Recently verified"], ["country", "Country"]]}
         filters={[
           { name: "category", label: "Type", options: Object.entries(CATEGORY) },
           { name: "country", label: "Country", options: marketOptions() },
           ...(persona().home.city ? [{ name: "london", label: "Location", options: [["1", `${persona().home.city} only`]] as [string, string][] }] : []),
           { name: "elig", label: "Eligibility", all: "Can apply (default)", options: [["any", "Everything, incl. ineligible"], ...Object.entries(ELIG).map(([k, v]) => [k, v.label] as [string, string])] },
+          { name: "chance", label: "Chance of getting it", options: [["strong", "Good or strong (18%+)"], ["possible", "Possible (8–17%)"], ["long", "Long shot (under 8%)"]] },
           { name: "match", label: "Match", options: [["80", "80%+"], ["60", "60%+"], ["40", "40%+"]] },
           { name: "closing", label: "Deadline", options: [["7", "Closes within 7 days"], ["30", "Closes within 30 days"], ["has", "Has a deadline"], ["none", "No deadline"]] },
           { name: "found", label: "Found", options: [["1", "Last 24 hours"], ["7", "Last 7 days"], ["30", "Last 30 days"]] },
@@ -81,7 +90,7 @@ export default async function Jobs({ searchParams }: { searchParams: SP }) {
           { name: "starred", label: "Starred", options: [["1", "Starred only"]] },
         ]} />
       <div className="space-y-2">
-        {r.rows.map((j) => (
+        {rows.map((j) => (
           <Link key={j.id} href={`/jobs/${j.id}`} className="card p-3 flex gap-3 items-start">
             <Score value={j.match_score} />
             <div className="min-w-0 flex-1">
@@ -89,6 +98,7 @@ export default async function Jobs({ searchParams }: { searchParams: SP }) {
               <p className="text-sm text-muted truncate">{j.employer} · {j.location ?? j.country}</p>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 <EligChip status={j.eligibility} />
+                <ChanceChip c={j.ch} />
                 <span className="chip">{CATEGORY[j.category] ?? j.category}</span>
                 {j.salary && <span className="chip">{j.salary}</span>}
                 {j.deadline && <span className="chip" style={{ color: "var(--warn)" }}>Closes {fmtDate(j.deadline)}</span>}
@@ -98,7 +108,7 @@ export default async function Jobs({ searchParams }: { searchParams: SP }) {
             </div>
           </Link>
         ))}
-        {r.rowCount === 0 && <p className="text-sm text-muted">No jobs match these filters.</p>}
+        {rows.length === 0 && <p className="text-sm text-muted">No jobs match these filters.</p>}
       </div>
     </div>
   );

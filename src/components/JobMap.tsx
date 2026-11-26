@@ -147,12 +147,13 @@ export function JobMap({ places, home }: { places: MapPlace[]; home: { label: st
       {/* Places list: tap to fly there */}
       {places.length > 0 && (
         <details className="card p-3" open={places.length <= 8}>
-          <summary className="font-semibold text-sm cursor-pointer select-none">📍 {places.length} place{places.length > 1 ? "s" : ""}: tap one to fly there</summary>
+          <summary className="font-semibold text-sm cursor-pointer select-none">📍 {places.length} place{places.length > 1 ? "s" : ""}, best chance first: tap one to fly there</summary>
           <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-1">
-            {[...places].sort((a, b) => b.jobs.length - a.jobs.length).map((p) => (
+            {[...places].sort((a, b) => Math.max(...b.jobs.map((j) => j.chance)) - Math.max(...a.jobs.map((j) => j.chance)) || b.jobs.length - a.jobs.length).map((p) => (
               <li key={p.id}>
                 <button type="button" onClick={() => pick(p)} className="w-full text-left rounded-lg px-2.5 py-2 text-sm flex items-center gap-2" style={{ background: "var(--surface-2)" }}>
                   <span className="flex-1 truncate">{p.label}{p.precise ? "" : " ≈"}</span>
+                  <span className="text-xs text-muted tabular-nums">best ~{Math.max(...p.jobs.map((j) => j.chance))}%</span>
                   <span className="chip !py-0.5 tabular-nums">{p.jobs.length}</span>
                 </button>
               </li>
