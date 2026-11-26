@@ -13,7 +13,8 @@ import { getProfile } from "@/profile";
 import { PageHeader, timeAgo, fmtTime } from "@/components/ui";
 import { PushControls } from "@/components/PushControls";
 import { SettingsSearch } from "@/components/SettingsSearch";
-import { saveHalal, saveBlockedEmployers, setNotificationMode, setSearchInterval, toggleSource, revokeSession, removeDevice, logoutAction, setAutomationFlag } from "@/app/actions";
+import { ChangePassword } from "@/components/ChangePassword";
+import { saveHalal, saveBlockedEmployers, setNotificationMode, setSearchInterval, toggleSource, revokeSession, removeDevice, setAutomationFlag } from "@/app/actions";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return <section data-settings-item className="card p-4"><h2 className="font-bold mb-3">{title}</h2>{children}</section>;
@@ -59,7 +60,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Settings" subtitle={`Signed in as ${me.email}`} right={<form action={logoutAction}><button className="btn btn-ghost !text-sm">Sign out</button></form>} />
+      <PageHeader title="Settings" subtitle={`Signed in as ${me.email}`} right={<form action="/api/logout" method="post"><button className="btn btn-ghost !text-sm">Sign out</button></form>} />
       <SettingsSearch />
       <a href="/settings/appearance" data-settings-item className="card p-4 flex items-center gap-3 gradient-hero">
         <span className="text-xl">🎨</span>
@@ -235,6 +236,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       </Section>
 
       <Section title="Security">
+        <div id="security" className="scroll-mt-20 mb-4">
+          <h3 className="font-semibold text-sm mb-1">Change password</h3>
+          <p className="text-xs text-muted mb-2">Signs out every other device. Sessions also end by themselves after 30 days without use.</p>
+          <ChangePassword />
+        </div>
         <h3 className="font-semibold text-sm mb-1">Signed-in sessions</h3>
         <ul className="text-sm divide-y divide-line mb-3">
           {sessions.rows.map((s) => (

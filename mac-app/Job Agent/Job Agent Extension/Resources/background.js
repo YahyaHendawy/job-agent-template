@@ -3,7 +3,7 @@ const api = globalThis.browser ?? globalThis.chrome;
 
 async function cfg() {
   const s = await api.storage.local.get(["token", "base"]);
-  return { token: s.token, base: s.base || "https://YOUR-APP.vercel.app" };
+  return { token: s.token, base: APP };
 }
 
 async function call(path, init = {}) {
@@ -15,7 +15,10 @@ async function call(path, init = {}) {
   return body;
 }
 
-api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+// The only site allowed to connect this extension (and the only one it talks to)
+const APP = "https://YOUR-APP.vercel.app";
+
+api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
     if (msg.type === "getKit") {
       const q = new URLSearchParams({ url: msg.url });
@@ -24,7 +27,11 @@ api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     }
     if (msg.type === "submitted") return call("/api/autofill/submitted", { method: "POST", body: JSON.stringify(msg.payload) });
     if (msg.type === "formQuestions") return call("/api/autofill/questions", { method: "POST", body: JSON.stringify(msg.payload) });
-    if (msg.type === "saveToken") { await api.storage.local.set({ token: msg.token, base: msg.base }); return { ok: true }; }
+    if (msg.type === "saveToken") {
+      let from = ""; try { from = new URL((sender && (sender.url || (sender.tab && sender.tab.url))) || "").origin; } catch {}
+      if (from !== APP) return { ok: false, error: "Only your Job Agent site can connect the extension" };
+      await api.storage.local.set({ token: msg.token, base: APP }); return { ok: true };
+    }
     if (msg.type === "status") { const c = await cfg(); return { connected: !!c.token, base: c.base }; }
     if (msg.type === "disconnect") { await api.storage.local.remove(["token"]); return { ok: true }; }
     return { error: "unknown message" };

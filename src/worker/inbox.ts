@@ -88,6 +88,11 @@ export async function checkInbox() {
         // Mailing lists / marketing (List-Unsubscribe header) can still be job emails, but never "verify" or vague "recruiter" items.
         const bulk = !!p.headers.get("list-unsubscribe") || p.headers.get("precedence") === "bulk";
         const category = classify(subject, text, `${from.name} ${from.address}`, bulk);
+        // Gmail's check that the sender really is who the From line says (DMARC, or DKIM/SPF for the same domain)
+        const ar = String(p.headers.get("authentication-results") ?? "");
+        const fromDom = (from.address ?? "").split("@")[1]?.toLowerCase() ?? "";
+        const aligned = (m: RegExpMatchArray | null) => !!m && !!fromDom && (m[1].toLowerCase() === fromDom || m[1].toLowerCase().endsWith(`.${fromDom}`) || fromDom.endsWith(`.${m[1].toLowerCase()}`));
+        const verified = /dmarc=pass/i.test(ar) || aligned(ar.match(/dkim=pass[^;]*header\.[id]=@?([a-z0-9.-]+)/i)) || aligned(ar.match(/spf=pass[^;]*smtp\.mailfrom=(?:[^@;\s]*@)?([a-z0-9.-]+)/i));
         const applicationId = ["other", "verification"].includes(category) && !/your application/i.test(subject) ? null
           : await matchApplication(from.name ?? "", from.address ?? "", subject, text);
         const unmatchedRecruiterAsk = category === "recruiter" && /\b(reply|respond|availability|let (us|me) know|next steps|call|chat)\b/i.test(text.slice(0, 2000));
@@ -100,7 +105,7 @@ export async function checkInbox() {
         if (!ins.rowCount) continue;
         processed++;
         if (category === "other") continue;
-        await act(category, { emailId: ins.rows[0].id, applicationId, subject, fromName: from.name || from.address || "", needsAction, fresh, receivedAt: p.date ?? new Date() });
+        await act(category, { emailId: ins.rows[0].id, applicationId, subject, fromName: from.name || from.address || "", needsAction, fresh, receivedAt: p.date ?? new Date(), verified });
         if (needsAction) actions++;
       }
       await pool.query(`insert into settings (key, value, updated_at) values ('emailState', $1, now()) on conflict (key) do update set value = excluded.value, updated_at = now()`,
@@ -118,11 +123,12 @@ export async function checkInbox() {
   return { processed, actions };
 }
 
-async function act(cat: Category, x: { emailId: string; applicationId: string | null; subject: string; fromName: string; needsAction: boolean; fresh: boolean; receivedAt: Date }) {
-  const app = x.applicationId ? (await pool.query(`select a.id, a.status, j.title, j.employer from applications a join jobs j on j.id = a.job_id where a.id = $1`, [x.applicationId])).rows[0] : null;
+async function act(cat: Category, x: { emailId: string; applicationId: string | null; subject: string; fromName: string; needsAction: boolean; fresh: boolean; receivedAt: Date; verified: boolean }) {
+  const app = x.applicationId ? (await pool.query(`select a.id, a.status, a.notes, j.title, j.employer from applications a join jobs j on j.id = a.job_id where a.id = $1`, [x.applicationId])).rows[0] : null;
   const emp = app?.employer ?? x.fromName;
-  const role = app ? short(app.title) : `“${short(x.subject, 70)}”`;
+  const role = (app ? short(app.title) : `“${short(x.subject, 70)}”`) + (x.verified ? "" : "\n⚠️ Sender not verified: check it's really them before replying or clicking links");
   const setStatus = async (s: string, allowed: string[]) => {
+    if (!x.verified) return; // a faked email can't change your applications
     if (app && allowed.includes(app.status)) await pool.query(`update applications set status = $2, updated_at = now() where id = $1`, [app.id, s]);
   };
   // First scan of a newly connected inbox: no notifications for older mail (it still appears in the app).
@@ -136,6 +142,8 @@ async function act(cat: Category, x: { emailId: string; applicationId: string | 
       await setStatus("assessment", ["awaiting_approval", "approved", "submitted"]);
       return emit({ type: "employer_response", level: "warning", title: `📝 Online test from ${emp}`, body: `${role}\n👉 Tap to see the deadline and free practice tests. Do it a day early.`, applicationId: app?.id, url, push });
     case "offer":
+      if (app && ["accepted", "started", "finished"].includes((await import("@/lib/opportunity")).oppOf(app.notes).state))
+        return emit({ type: "employer_response", level: "info", importance: "important", title: `📄 ${emp}: update about your job`, body: `“${short(x.subject, 80)}”\n👉 Tap to read it.`, applicationId: app.id, url, push });
       await setStatus("offer", ["submitted", "assessment", "interview", "approved", "awaiting_approval"]);
       return emit({ type: "employer_response", level: "success", importance: "urgent", title: `🎉 Job offer from ${emp}!`, body: `${role}\n👉 Tap to check it against your visa, then accept or decline.`, applicationId: app?.id, url: app ? `/work/${app.id}` : url, push });
     case "rejection":

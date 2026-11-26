@@ -268,6 +268,9 @@
   const $ = (id) => root.getElementById(id);
   $("min").onclick = () => { $("body").hidden = !$("body").hidden; };
 
+  // Shared job-form sites (one host, many employers): a launch only counts on the same employer's pages
+  const SHARED_ATS = /(^|\.)(greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com|smartrecruiters\.com)$/;
+  const scope = () => SHARED_ATS.test(location.hostname) ? `${location.host}/${location.pathname.split("/").filter(Boolean)[0] || ""}` : location.host;
   let kitCache = null, ticker = null, countdown = null, launchedByYou = false;
 
   function render(res) {
@@ -319,7 +322,7 @@
       return;
     }
     kitCache = kit;
-    await api.storage.local.set({ pending: { id: kit.match.id, host: location.host, at: Date.now() } });
+    await api.storage.local.set({ pending: { id: kit.match.id, host: scope(), at: Date.now() } });
     const res = fill(kit);
     setTimeout(() => {
       const r2 = fill(kit); res.filled = Math.max(res.filled, r2.filled); res.cv = res.cv || r2.cv; // late-rendering forms get a second pass
@@ -334,9 +337,9 @@
   // ---------- start: auto-run when the owner opened it with "Apply now", and on later pages of the same form ----------
   (async () => {
     const m = location.hash.match(/jobagent=([0-9a-f-]{36})/);
-    if (m) { launchedByYou = true; await api.storage.local.set({ active: { id: m[1], host: location.host, at: Date.now(), launchedByYou: true } }); return run(m[1]); }
+    if (m) { launchedByYou = true; await api.storage.local.set({ active: { id: m[1], host: scope(), at: Date.now(), launchedByYou: true } }); return run(m[1]); }
     const { active } = await api.storage.local.get("active");
-    if (active && active.host === location.host && Date.now() - active.at < 2 * 3600_000 && fields().length > 2) { launchedByYou = !!active.launchedByYou; run(active.id); }
+    if (active && active.host === scope() && Date.now() - active.at < 2 * 3600_000 && fields().length > 2) { launchedByYou = !!active.launchedByYou; run(active.id); }
   })();
 
   // ---------- confirmation detection after a submit ----------
@@ -346,7 +349,7 @@
     const fresh = (await api.storage.local.get("pending")).pending;
     let submitAt = fresh && fresh.submitAt;
     try { submitAt = Math.max(submitAt || 0, Number(sessionStorage.getItem("jobAgentSubmitAt") || 0)); } catch {}
-    if (!fresh || !submitAt || Date.now() - submitAt > 30 * 60_000 || Date.now() - fresh.at > 3 * 3600_000) return;
+    if (!fresh || !submitAt || (fresh.host && fresh.host !== scope()) || Date.now() - submitAt > 30 * 60_000 || Date.now() - fresh.at > 3 * 3600_000) return;
     const check = async () => {
       const t = txt(document.body).slice(0, 4000);
       const m = t.match(/(thank you for (applying|your application|submitting)[^.]{0,120}|application (has been |was )?(received|submitted)[^.]{0,120}|we('ve| have) received your application[^.]{0,120})/i);

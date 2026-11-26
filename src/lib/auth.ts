@@ -55,7 +55,7 @@ export async function currentUser(): Promise<CurrentUser | null> {
   const sid = sha256(token);
   const r = await pool.query(
     `select u.id, u.email, u.name, s.id as sid, s.last_seen_at from sessions s join users u on u.id = s.user_id
-     where s.id = $1 and s.revoked_at is null and s.expires_at > now()`,
+     where s.id = $1 and s.revoked_at is null and s.expires_at > now() and (s.last_seen_at is null or s.last_seen_at > now() - interval '30 days')`,
     [sid],
   );
   const row = r.rows[0];
@@ -83,13 +83,33 @@ export async function ownerExists() {
   return r.rowCount! > 0;
 }
 
-/** Simple brute-force protection: max 8 failed logins per IP per 15 minutes. */
+/** Brute-force protection: max 8 failures per IP and 30 overall (any IP) per 15 minutes, for sign-in and set-up. */
 export async function loginBlocked(ip: string | null) {
   const r = await pool.query(
-    `select count(*)::int as n from audit_log where action = 'login_failed' and ip is not distinct from $1 and ts > now() - interval '15 minutes'`,
-    [ip],
-  );
-  return r.rows[0].n >= 8;
+    `select count(*) filter (where ip is not distinct from $1)::int as mine, count(*)::int as total
+     from audit_log where action in ('login_failed', 'setup_failed') and ts > now() - interval '15 minutes'`, [ip]);
+  return r.rows[0].mine >= 8 || r.rows[0].total >= 30;
+}
+
+/** Runs sign-in/set-up attempts one at a time, so a burst of requests can't all slip past the limit. */
+export async function oneAtATime<T>(fn: () => Promise<T>): Promise<T> {
+  const c = await pool.connect();
+  try { await c.query(`select pg_advisory_lock(7310)`); return await fn(); }
+  finally { await c.query(`select pg_advisory_unlock(7310)`).catch(() => {}); c.release(); }
+}
+
+let dummyHash: string | null = null;
+/** Checks a password in the same time whether or not the account exists (so timing can't reveal the email). */
+export async function verifyOrDummy(pw: string, stored: string | null | undefined) {
+  dummyHash ??= await hashPassword(randomBytes(16).toString("hex"));
+  const ok = await verifyPassword(pw, stored ?? dummyHash);
+  return ok && !!stored;
+}
+
+/** Constant-time comparison of two strings. */
+export function sameSecret(a: string, b: string) {
+  const x = createHash("sha256").update(a).digest(), y = createHash("sha256").update(b).digest();
+  return timingSafeEqual(x, y);
 }
 
 /** For JSON API routes: rejects cross-site requests. */
@@ -104,7 +124,7 @@ export async function tokenUser(req: Request): Promise<{ id: string; tokenId: st
   const m = (req.headers.get("authorization") ?? "").match(/^Bearer\s+([A-Za-z0-9_-]{30,})$/);
   if (!m) return null;
   const r = await pool.query(
-    `update api_tokens set last_used_at = now() where token_hash = $1 and revoked_at is null returning id, user_id`, [sha256(m[1])]);
+    `update api_tokens set last_used_at = now() where token_hash = $1 and revoked_at is null and created_at > now() - interval '365 days' returning id, user_id`, [sha256(m[1])]);
   return r.rows[0] ? { id: r.rows[0].user_id, tokenId: r.rows[0].id } : null;
 }
 

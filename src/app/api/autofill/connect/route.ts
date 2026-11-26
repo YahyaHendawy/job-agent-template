@@ -8,6 +8,8 @@ export async function POST(req: Request) {
   if (!u) return new Response("Unauthorized", { status: 401 });
   const ua = req.headers.get("user-agent") ?? "";
   const label = `Safari autofill · ${/Macintosh/.test(ua) ? "Mac" : "browser"} · ${new Date().toISOString().slice(0, 10)}`;
+  const { pool } = await import("@/db");
+  await pool.query(`update api_tokens set revoked_at = now() where user_id = $1 and revoked_at is null and label like 'Safari autofill%'`, [u.id]);
   const token = await createApiToken(u.id, label);
   await audit("autofill_connected", { label }, u.id);
   await emit({ type: "security", title: "Safari autofill connected", body: label, push: false });

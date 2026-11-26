@@ -43,11 +43,22 @@ export function inVacation(monday: string, det: Record<string, any>) {
 export const hourlyRate = (pay?: string | null) => { const m = (pay ?? "").match(/£\s?(\d+(?:\.\d+)?)\s*(?:\/|per|an|a)\s*(?:h\b|hr|hour)/i); return m ? Number(m[1]) : null; };
 
 export type Check = { tone: "good" | "warn" | "bad"; text: string; href?: string };
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+/** "2028-10-31", "31/10/2028" or "October 2028" (→ 1st of the month, to stay safe) as YYYY-MM-DD; null if unreadable. */
+export function parseDay(v?: string | null): string | null {
+  const s = (v ?? "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  let m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  m = s.match(/^([a-z]{3})[a-z]*\.?\s+(\d{4})$/i);
+  if (m && MONTHS.includes(m[1].toLowerCase())) return `${m[2]}-${String(MONTHS.indexOf(m[1].toLowerCase()) + 1).padStart(2, "0")}-01`;
+  return null;
+}
 /** Worked from the UK (UK, unknown or remote): UK visa and payroll rules apply. Only clearly-abroad jobs are exempt. */
 export const inUk = (country: string | null) => !country || ["UK", "OTHER", "REMOTE"].includes(country);
 
 /** Things to check before saying yes, from your visa, dates, pay and the offer itself. */
-export function checks(job: { category: string | null; country: string | null }, o: Opp, det: Record<string, any>, otherHours = 0): Check[] {
+export function checks(job: { category: string | null; country: string | null }, o: Opp, det: Record<string, any>, otherHours = 0, otherMissing = false): Check[] {
   const P = persona();
   const uni = P.universityShort || "your university";
   const out: Check[] = [];
@@ -60,6 +71,7 @@ export function checks(job: { category: string | null; country: string | null },
     const H = P.visa.termHours;
     // The term-time limit is for all your jobs added together
     const both = o.hours != null && otherHours ? `${o.hours + otherHours} h/week in total with your other job` : `${o.hours} h/week`;
+    if (otherMissing) out.push({ tone: "warn", text: `Your other job's hours aren't saved: the ${H} h limit covers all your jobs together, so add them in My job` });
     if (job.category === "placement") out.push({ tone: "warn", text: `A placement year must be an approved part of your course: get ${uni}'s placement approval before you accept` });
     else if (o.hours != null && o.hours + otherHours > H) {
       const allVac = o.start && o.end && det.earliestStartSummer && det.latestEndSummer && o.start >= det.earliestStartSummer && o.end <= det.latestEndSummer;
@@ -67,7 +79,9 @@ export function checks(job: { category: string | null; country: string | null },
         : { tone: "bad", text: `${both} is over your ${H} h/week term-time limit. Only official vacation weeks can be full-time: agree term-time hours of ${H} or fewer, or check the dates` });
     } else if (o.hours != null) out.push({ tone: "good", text: `${both} is within your ${H} h/week term-time limit` });
     else out.push({ tone: "warn", text: `Hours not saved yet: in term time you can work up to ${H} h/week` });
-    const exp = [det.visaExpiry, P.visa.expiry].find((x) => /^\d{4}-\d{2}-\d{2}$/.test(x ?? ""));
+    const rawExp = det.visaExpiry || P.visa.expiry;
+    const exp = parseDay(rawExp);
+    if (rawExp && !exp) out.push({ tone: "warn", text: "Couldn't read your visa expiry date: enter it as a date in Application details so I can check it" });
     if (exp && o.end && o.end > exp) out.push({ tone: "bad", text: `It ends after your visa expires (${fmtDay(exp)}): you can't work past that date` });
     out.push({ tone: "warn", text: "Before signing: check the dates and hours against your visa in your UKVI account, and ask your university if unsure", href: "https://www.gov.uk/student-visa/work" });
   }
@@ -124,11 +138,11 @@ export async function opportunityReminders(enqueue: (type: string, payload: Reco
     const url = `/work/${r.id}`;
     const respond = daysUntil(o.respondBy), start = daysUntil(o.start), end = daysUntil(o.end);
     if (o.state === "considering" && respond != null && (respond === 2 || respond === 0) && hour >= 9)
-      await once(`opp:${r.id}:respond:${respond}`, { type: "deadline_approaching", level: "warning", importance: "urgent", title: respond === 0 ? `⏰ Reply to ${r.employer}'s offer today` : `⏰ ${r.employer}'s offer: reply in 2 days`, body: `${r.title}\n👉 Tap to check it against your visa and reply.`, applicationId: r.id, url });
+      await once(`opp:${r.id}:respond:${o.respondBy}:${respond}`, { type: "deadline_approaching", level: "warning", importance: "urgent", title: respond === 0 ? `⏰ Reply to ${r.employer}'s offer today` : `⏰ ${r.employer}'s offer: reply in 2 days`, body: `${r.title}\n👉 Tap to check it against your visa and reply.`, applicationId: r.id, url });
     if (o.state === "accepted" && start != null && (start === 7 || start === 1) && hour >= 9) {
-      const othersN = (await pool.query(`select count(*)::int n from applications where id <> $1 and status in ('submitted','assessment','interview','offer')`, [r.id])).rows[0].n;
+      const othersN = (await pool.query(`select notes from applications where id <> $1 and status in ('submitted','assessment','interview','offer')`, [r.id])).rows.filter((x) => !["accepted", "started", "finished"].includes(oppOf(x.notes).state)).length;
       const left = prepItems(r.id, r, o).filter((i) => (i.id !== "others" || othersN > 0) && !(o.checklist ?? []).includes(i.id)).length;
-      await once(`opp:${r.id}:start:${start}`, { type: "deadline_approaching", level: "info", importance: "important", title: start === 1 ? `🚀 You start at ${r.employer} tomorrow` : `🚀 One week until you start at ${r.employer}`, body: `${r.title}${left ? `\n👉 ${left} thing${left > 1 ? "s" : ""} left on your getting-ready list.` : "\n👉 You're all set. Plan your route tonight."}`, applicationId: r.id, url });
+      await once(`opp:${r.id}:start:${o.start}:${start}`, { type: "deadline_approaching", level: "info", importance: "important", title: start === 1 ? `🚀 You start at ${r.employer} tomorrow` : `🚀 One week until you start at ${r.employer}`, body: `${r.title}${left ? `\n👉 ${left} thing${left > 1 ? "s" : ""} left on your getting-ready list.` : "\n👉 You're all set. Plan your route tonight."}`, applicationId: r.id, url });
     }
     if (o.state === "accepted" && start != null && (start < 0 || (start === 0 && hour >= 7))) {
       await setOpp(r.id, { state: "started" });

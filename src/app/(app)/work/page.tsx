@@ -22,8 +22,9 @@ export default async function Work({ searchParams }: { searchParams: Promise<{ e
   const r = await pool.query(`select a.id, a.status, a.notes, a.updated_at, j.title, j.employer, j.location from applications a join jobs j on j.id = a.job_id
      where a.status = 'offer' or a.notes like '%"opportunity"%' order by a.updated_at desc`);
   const rows = r.rows.map((a) => ({ ...a, o: oppOf(a.notes) as Opp }));
-  const active = rows.filter((a) => !["declined", "finished"].includes(a.o.state));
-  const past = rows.filter((a) => ["declined", "finished"].includes(a.o.state));
+  const isPast = (a: { status: string; o: Opp }) => ["declined", "finished"].includes(a.o.state) || ["withdrawn", "rejected"].includes(a.status);
+  const active = rows.filter((a) => !isPast(a));
+  const past = rows.filter(isPast);
   const interviews = (await pool.query(`select count(*)::int n from applications where status in ('assessment','interview')`)).rows[0].n;
   const Card = ({ a }: { a: { id: string; title: string; employer: string; location: string | null; o: Opp } }) => (
     <Link href={`/work/${a.id}`} className="card p-4 block">

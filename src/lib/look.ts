@@ -42,7 +42,7 @@ const hex = (s: string) => (/^#[0-9a-f]{6}$/i.test(s) ? s : null);
 
 /** CSS for the chosen look. Only emits rules that differ from the built-in command-centre look. */
 export function appearanceCss(a: Appearance): string {
-  const t = THEMES[a.theme] ?? THEMES.command;
+  const t = Object.hasOwn(THEMES, a.theme) ? THEMES[a.theme] : THEMES.command;
   const accent = hex(a.accent) ?? t.accent;
   const css: string[] = [];
   const recolour = a.theme !== "command" || !!hex(a.accent);

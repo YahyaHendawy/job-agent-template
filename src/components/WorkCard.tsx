@@ -4,9 +4,9 @@ import { oppOf, daysUntil, fmtDay } from "@/lib/opportunity";
 
 /** Home: shown only while you have an offer or a job on the go. */
 export async function WorkCard() {
-  const r = await pool.query(`select a.id, a.notes, j.title, j.employer from applications a join jobs j on j.id = a.job_id
+  const r = await pool.query(`select a.id, a.status, a.notes, j.title, j.employer from applications a join jobs j on j.id = a.job_id
      where a.status = 'offer' or a.notes like '%"opportunity"%' order by a.updated_at desc limit 10`);
-  const live = r.rows.map((a) => ({ ...a, o: oppOf(a.notes) })).filter((a) => !["declined", "finished"].includes(a.o.state)).slice(0, 3);
+  const live = r.rows.map((a) => ({ ...a, o: oppOf(a.notes) })).filter((a) => !["declined", "finished"].includes(a.o.state) && !["withdrawn", "rejected"].includes(a.status)).slice(0, 3);
   if (!live.length) return null;
   const line = (o: ReturnType<typeof oppOf>) => {
     if (o.state === "considering") { const d = daysUntil(o.respondBy); return d != null ? `🎉 Offer · decide by ${fmtDay(o.respondBy)}` : "🎉 Offer · check it and decide"; }

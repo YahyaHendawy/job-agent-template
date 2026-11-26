@@ -44,12 +44,11 @@ const CLOSED_RE = /no longer (accepting|available|open)|position (has been )?fil
 export async function checkAdvert(url: string | null): Promise<{ ok: boolean | null; note: string }> {
   if (!url) return { ok: null, note: "No advert link to check" };
   try {
-    const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 12_000);
-    const r = await fetch(url, { redirect: "follow", signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0 (JobAgent personal checker)" } });
-    clearTimeout(t);
+    const { safeFetch } = await import("@/lib/safefetch");
+    const r = await safeFetch(url, { headers: { "User-Agent": "Mozilla/5.0 (JobAgent personal checker)" }, maxBytes: 400_000 });
     if (r.status === 404 || r.status === 410) return { ok: false, note: `The advert page is gone (${r.status})` };
     if (r.status >= 400) return { ok: null, note: `Couldn't check automatically (site answered ${r.status}); it's probably fine` };
-    const text = (await r.text()).slice(0, 400_000);
+    const text = r.text;
     if (CLOSED_RE.test(text.replace(/<[^>]+>/g, " "))) return { ok: false, note: "The advert says applications are closed" };
     return { ok: true, note: "Advert checked: still open" };
   } catch {

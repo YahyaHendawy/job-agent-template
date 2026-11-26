@@ -15,13 +15,21 @@ const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 
 export async function setupAction(_: unknown, f: FormData) {
   if (await ownerExists()) return { error: "Owner account already exists." };
-  const token = process.env.OWNER_SETUP_TOKEN;
-  if (!token || str(f, "token") !== token) return { error: "Invalid setup token." };
+  const { ip } = await clientInfo();
+  const { oneAtATime, sameSecret } = await import("@/lib/auth");
+  const bad = await oneAtATime(async () => {
+    if (await loginBlocked(ip)) return "Too many attempts. Try again in 15 minutes.";
+    const token = process.env.OWNER_SETUP_TOKEN;
+    if (!token || !sameSecret(str(f, "token"), token)) { await audit("setup_failed", {}, null, ip); return "Invalid setup token."; }
+    return null;
+  });
+  if (bad) return { error: bad };
   const email = str(f, "email").toLowerCase(), name = str(f, "name"), pw = str(f, "password");
   if (!email.includes("@") || name.length < 2) return { error: "Enter your name and email." };
   if (pw.length < 12) return { error: "Use a password of at least 12 characters." };
-  const r = await pool.query(`insert into users (email, name, password_hash) values ($1,$2,$3) returning id`, [email, name, await hashPassword(pw)]);
-  const { ip } = await clientInfo();
+  // One owner only, even if two set-ups race each other
+  const r = await pool.query(`insert into users (email, name, password_hash) select $1,$2,$3 where not exists (select 1 from users) returning id`, [email, name, await hashPassword(pw)]);
+  if (!r.rowCount) return { error: "Owner account already exists." };
   await audit("owner_created", { email }, r.rows[0].id, ip);
   await createSession(r.rows[0].id);
   redirect("/welcome");
@@ -29,16 +37,46 @@ export async function setupAction(_: unknown, f: FormData) {
 
 export async function loginAction(_: unknown, f: FormData) {
   const { ip } = await clientInfo();
-  if (await loginBlocked(ip)) return { error: "Too many attempts. Try again in 15 minutes." };
+  const { oneAtATime, verifyOrDummy } = await import("@/lib/auth");
   const email = str(f, "email").toLowerCase();
-  const u = (await pool.query(`select id, password_hash from users where email = $1`, [email])).rows[0];
-  if (!u || !(await verifyPassword(str(f, "password"), u.password_hash))) {
-    await audit("login_failed", { email }, null, ip);
-    return { error: "Incorrect email or password." };
-  }
+  const res = await oneAtATime(async () => {
+    if (await loginBlocked(ip)) return { error: "Too many attempts. Try again in 15 minutes." };
+    const u = (await pool.query(`select id, password_hash from users where email = $1`, [email])).rows[0];
+    if (!(await verifyOrDummy(str(f, "password"), u?.password_hash))) {
+      await audit("login_failed", { email }, null, ip);
+      // Many failures from anywhere: tell the owner (once an hour)
+      const n = (await pool.query(`select count(*)::int n from audit_log where action = 'login_failed' and ts > now() - interval '15 minutes'`)).rows[0].n;
+      if (n >= 20 && await enqueue("noop", {}, { dedupeKey: `login-alert:${Math.floor(Date.now() / 3_600_000)}` }))
+        await emit({ type: "security", level: "error", importance: "urgent", title: "🔐 Many failed sign-in attempts", body: `${n} wrong passwords in 15 minutes. Sign-in is paused for a while. Your phone stays signed in.\n👉 If this wasn't you, change your password in Settings.`, url: "/settings#security" });
+      return { error: "Incorrect email or password." };
+    }
+    return { id: u.id as string };
+  });
+  if ("error" in res) return res;
+  const u = { id: res.id };
   await audit("login", {}, u.id, ip);
   await createSession(u.id);
   redirect("/");
+}
+
+/** Change password: needs the current one; signs out every other device. */
+export async function changePassword(_: unknown, f: FormData) {
+  const me = await requireUser();
+  const { ip } = await clientInfo();
+  const { oneAtATime } = await import("@/lib/auth");
+  return oneAtATime(async () => {
+    if (await loginBlocked(ip)) return { error: "Too many attempts. Try again in 15 minutes." };
+    const u = (await pool.query(`select password_hash from users where id = $1`, [me.id])).rows[0];
+    if (!u || !(await verifyPassword(str(f, "current"), u.password_hash))) { await audit("login_failed", { change: true }, me.id, ip); return { error: "Your current password isn't right." }; }
+    const pw = str(f, "password");
+    if (pw.length < 12) return { error: "Use at least 12 characters." };
+    if (pw !== str(f, "confirm")) return { error: "The two new passwords don't match." };
+    await pool.query(`update users set password_hash = $2 where id = $1`, [me.id, await hashPassword(pw)]);
+    await pool.query(`update sessions set revoked_at = now() where user_id = $1 and id <> $2 and revoked_at is null`, [me.id, me.sessionId]);
+    await audit("password_changed", {}, me.id, ip);
+    await emit({ type: "security", title: "🔐 Password changed", body: "Every other device was signed out.", push: false });
+    return { ok: "Password changed. Every other device is signed out." };
+  });
 }
 
 export async function logoutAction() {
@@ -287,11 +325,10 @@ export async function addJobByLink(f: FormData) {
   let location = String(f.get("location") ?? "").trim();
   try {
     const { htmlToText, decodeEntities } = await import("@/connectors/http");
-    const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 12_000);
-    const res = await fetch(url, { signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0 (Macintosh) JobAgent/0.1", Accept: "text/html" } });
-    clearTimeout(t);
+    const { safeFetch } = await import("@/lib/safefetch");
+    const res = await safeFetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Macintosh) JobAgent/0.1", Accept: "text/html" }, maxBytes: 600_000 });
     if (res.ok) {
-      const html = (await res.text()).slice(0, 600_000);
+      const html = res.text;
       const meta = (p: string) => decodeEntities((html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${p}["'][^>]+content=["']([^"']+)`, "i"))?.[1] ?? "").trim());
       title ||= meta("og:title") || decodeEntities((html.match(/<title[^>]*>([^<]+)/i)?.[1] ?? "").trim());
       employer ||= meta("og:site_name");
@@ -449,7 +486,9 @@ export async function saveAppearance(json: string) {
     if (typeof D[k] === "boolean") out[k] = typeof v[k] === "boolean" ? v[k] : D[k];
     else out[k] = typeof v[k] === "string" ? String(v[k]).slice(0, 40) : D[k];
   }
-  if (!(out.theme in THEMES)) out.theme = D.theme;
+  if (!Object.hasOwn(THEMES, out.theme)) out.theme = D.theme;
+  const ENUMS: Record<string, string[]> = { font: ["system", "rounded", "mono", "serif"], textSize: ["s", "m", "l", "xl"], corners: ["sharp", "normal", "round"], cards: ["glass", "solid", "outline"], motion: ["full", "calm", "off"] };
+  for (const [k, list] of Object.entries(ENUMS)) if (!list.includes(out[k])) out[k] = D[k];
   if (out.accent && !/^#[0-9a-f]{6}$/i.test(out.accent)) out.accent = "";
   await pool.query(`insert into settings (key, value, updated_at) values ('appearance', $1, now()) on conflict (key) do update set value = excluded.value, updated_at = now()`, [JSON.stringify(out)]);
   revalidatePath("/", "layout");
@@ -506,6 +545,14 @@ export async function saveOpportunity(appId: string, f: FormData) {
     manager: str(f, "manager").slice(0, 80) || undefined, managerEmail: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email.slice(0, 120) : undefined,
     contract: f.get("contract") === "on", notes: str(f, "notes").slice(0, 1000) || undefined,
   });
+  { // New dates can undo an automatic start or finish
+    const { oppOf } = await import("@/lib/opportunity");
+    const { loadPersona } = await import("@/lib/persona");
+    const m = oppOf((await pool.query(`select notes from applications where id = $1`, [appId])).rows[0]?.notes ?? null);
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: (await loadPersona()).timeZone || "Europe/London" });
+    if (m.state === "finished" && m.end && m.end >= today) await setOpp(appId, { state: "started" });
+    else if (m.state === "started" && m.start && m.start > today) await setOpp(appId, { state: "accepted" });
+  }
   revalidatePath(`/work/${appId}`); revalidatePath("/work");
   redirect(`/work/${appId}?saved=1#details`);
 }
@@ -571,7 +618,7 @@ export async function addOwnJob(f: FormData) {
   if (!employer || !title) redirect("/work?error=own");
   const start = isDay(str(f, "start")) ? str(f, "start") : undefined;
   const { createHash } = await import("node:crypto");
-  const fp = "got:" + createHash("sha256").update(`${employer.toLowerCase()}|${title.toLowerCase()}`).digest("hex").slice(0, 32);
+  const fp = "got:" + createHash("sha256").update(`${employer.toLowerCase()}|${title.toLowerCase()}|${start ?? ""}`).digest("hex").slice(0, 32);
   const job = await pool.query(
     `insert into jobs (fingerprint, employer, title, listing_status, last_verified_at, last_seen_at, eligibility, eligibility_reasons, missing_evidence, match_score, match_reasons, starred, notes, category)
      values ($1,$2,$3,'closed',now(),now(),'manual_verification','[]','[]',0,'[]',true,'A job you got', 'other')
@@ -580,7 +627,7 @@ export async function addOwnJob(f: FormData) {
     `insert into applications (job_id, status, submitted_at, notes) values ($1, 'offer', now(), $2)
      on conflict (job_id) do update set status = 'offer', updated_at = now() returning id`,
     [job.rows[0].id, JSON.stringify({ opportunity: { state: "accepted", start, decidedAt: new Date().toISOString() } })]);
-  { const { setOpp } = await import("@/lib/opportunity"); await setOpp(app.rows[0].id, { state: "accepted", start, decidedAt: new Date().toISOString() }); }
+  { const { setOpp } = await import("@/lib/opportunity"); await setOpp(app.rows[0].id, { state: "accepted", start, end: undefined, respondBy: undefined, hours: undefined, contract: false, checklist: [], decidedAt: new Date().toISOString() }); }
   await audit("own_job_added", {}, u.id);
   revalidatePath("/work"); revalidatePath("/");
   redirect(`/work/${app.rows[0].id}`);

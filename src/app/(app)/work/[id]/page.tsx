@@ -31,20 +31,27 @@ export default async function WorkItem({ params, searchParams }: { params: Promi
   const [logs, offerMail, others, otherOpps, weekRows] = await Promise.all([
     pool.query(`select id, kind, day::text, hours, text from opportunity_log where application_id = $1 order by day desc, id desc limit 200`, [id]),
     pool.query(`select id from emails where application_id = $1 and category = 'offer' order by received_at desc limit 1`, [id]),
-    pool.query(`select a.id, a.status, j.id as job_id, j.title, j.employer from applications a join jobs j on j.id = a.job_id
+    pool.query(`select a.id, a.status, a.notes, j.id as job_id, j.title, j.employer from applications a join jobs j on j.id = a.job_id
                 where a.id <> $1 and a.status in ('submitted','assessment','interview','offer') order by a.updated_at desc`, [id]),
     pool.query(`select notes from applications where id <> $1 and (status = 'offer' or notes like '%"opportunity"%')`, [id]),
     pool.query(`select day::text, sum(hours)::float total from opportunity_log where kind = 'hours' group by day`),
   ]);
   // The term-time limit covers all your jobs together
-  const otherHours = otherOpps.rows.map((x) => oppOf(x.notes)).filter((x) => ["accepted", "started"].includes(x.state)).reduce((s, x) => s + (x.hours ?? 0), 0);
+  // Only jobs that overlap this one, and aren't entirely in your summer break, count toward the term-time limit
+  const overlapping = otherOpps.rows.map((x) => oppOf(x.notes)).filter((x) => ["accepted", "started"].includes(x.state)
+    && (!x.end || !o.start || x.end >= o.start) && (!x.start || !o.end || x.start <= o.end)
+    && !(x.start && x.end && det.earliestStartSummer && det.latestEndSummer && x.start >= det.earliestStartSummer && x.end <= det.latestEndSummer));
+  const otherHours = overlapping.reduce((s, x) => s + (x.hours ?? 0), 0);
+  const otherMissing = overlapping.some((x) => x.hours == null);
+  // Your other real jobs aren't "applications to withdraw"
+  const otherApps = others.rows.filter((x) => !["accepted", "started", "finished"].includes(oppOf(x.notes).state));
   const weekTotals = new Map<string, number>(weekRows.rows.map((w) => [w.day, Number(w.total)]));
   const hours = logs.rows.filter((l) => l.kind === "hours");
   const journal = logs.rows.filter((l) => l.kind === "journal");
   const mail = offerMail.rows[0]?.id as string | undefined;
-  const otherOffers = others.rows.filter((x) => x.status === "offer");
+  const otherOffers = otherApps.filter((x) => x.status === "offer");
   const done = o.checklist ?? [];
-  const prep = prepItems(id, a, o).filter((i) => i.id !== "others" || others.rows.length > 0);
+  const prep = prepItems(id, a, o).filter((i) => i.id !== "others" || otherApps.length > 0);
   const prepLeft = prep.filter((i) => !done.includes(i.id)).length;
   const rate = hourlyRate(o.pay ?? a.salary);
   const totalH = hours.reduce((s, h) => s + Number(h.hours), 0);
@@ -124,7 +131,10 @@ ${me || "[Your name]"}`;
             </div>
           </div>
         )}
-        {o.state === "finished" && <p className="text-sm">🏁 <b>Finished.</b> Finish well: reference, LinkedIn, CV. <a href="#finish" className="text-accent font-semibold">Go →</a></p>}
+        {o.state === "finished" && (
+          <div className="flex flex-wrap items-center gap-2 text-sm"><span className="flex-1">🏁 <b>Finished.</b> Finish well: reference, LinkedIn, CV. <a href="#finish" className="text-accent font-semibold">Go →</a></span>
+            <form action={setOppState.bind(null, id, "started")}><button className="btn btn-ghost !text-xs">↩︎ Still working here</button></form></div>
+        )}
         {o.state === "declined" && (
           <div className="flex items-center gap-2 text-sm"><span className="flex-1">You declined this offer.</span><form action={setOppState.bind(null, id, "considering")}><button className="btn btn-ghost !text-sm">↩︎ Undo</button></form></div>
         )}
@@ -137,7 +147,7 @@ ${me || "[Your name]"}`;
         <section className="card p-4 space-y-2" id="checks">
           <h2 className="font-bold">Checks</h2>
           <ul className="space-y-1.5 text-sm">
-            {checks(a, o, det, otherHours).map((c, i) => (
+            {checks(a, o, det, otherHours, otherMissing).map((c, i) => (
               <li key={i} className="flex gap-2"><span style={{ color: TONE[c.tone] }}>{c.tone === "good" ? "✓" : c.tone === "bad" ? "✗" : "!"}</span>
                 <span className="flex-1">{c.text}{c.href && <> <a href={c.href} target="_blank" rel="noopener noreferrer" className="text-accent font-semibold whitespace-nowrap">Check ↗</a></>}</span></li>
             ))}
@@ -174,16 +184,16 @@ ${me || "[Your name]"}`;
         </section>
       )}
 
-      {["accepted", "started"].includes(o.state) && others.rows.length > 0 && (
+      {["accepted", "started"].includes(o.state) && otherApps.length > 0 && (
         <section className="card p-4 space-y-2" id="others">
           <h2 className="font-bold">Your other applications</h2>
           <p className="text-xs text-muted">Now that you&apos;ve accepted, withdraw politely from these (email them the text below), then mark each one.</p>
           <ul className="divide-y divide-line">
-            {others.rows.map((x) => (
+            {otherApps.map((x) => (
               <li key={x.id} className="py-2 flex items-center gap-2 text-sm">
                 <Link href={`/applications/${x.id}`} className="flex-1 min-w-0 truncate">{x.employer}: {x.title}</Link>
                 <span className="chip !py-0.5 shrink-0">{APP_STATUS[x.status] ?? x.status}</span>
-                <form action={setApplicationStatus.bind(null, x.id, "withdrawn")}><button className="btn btn-ghost !py-1 !px-2 !text-xs">Withdrawn</button></form>
+                <form action={x.status === "offer" ? setOppState.bind(null, x.id, "declined") : setApplicationStatus.bind(null, x.id, "withdrawn")}><button className="btn btn-ghost !py-1 !px-2 !text-xs">Withdrawn</button></form>
               </li>
             ))}
           </ul>
