@@ -47,7 +47,7 @@ export type Check = { tone: "good" | "warn" | "bad"; text: string; href?: string
 export const inUk = (country: string | null) => !country || ["UK", "OTHER", "REMOTE"].includes(country);
 
 /** Things to check before saying yes, from your visa, dates, pay and the offer itself. */
-export function checks(job: { category: string | null; country: string | null }, o: Opp, det: Record<string, any>): Check[] {
+export function checks(job: { category: string | null; country: string | null }, o: Opp, det: Record<string, any>, otherHours = 0): Check[] {
   const P = persona();
   const uni = P.universityShort || "your university";
   const out: Check[] = [];
@@ -58,12 +58,14 @@ export function checks(job: { category: string | null; country: string | null },
   }
   if (isUkStudent() && inUk(job.country)) {
     const H = P.visa.termHours;
+    // The term-time limit is for all your jobs added together
+    const both = o.hours != null && otherHours ? `${o.hours + otherHours} h/week in total with your other job` : `${o.hours} h/week`;
     if (job.category === "placement") out.push({ tone: "warn", text: `A placement year must be an approved part of your course: get ${uni}'s placement approval before you accept` });
-    else if (o.hours != null && o.hours > H) {
+    else if (o.hours != null && o.hours + otherHours > H) {
       const allVac = o.start && o.end && det.earliestStartSummer && det.latestEndSummer && o.start >= det.earliestStartSummer && o.end <= det.latestEndSummer;
       out.push(allVac ? { tone: "good", text: `${o.hours} h/week is fine: the whole role is inside your summer vacation` }
-        : { tone: "bad", text: `${o.hours} h/week is over your ${H} h/week term-time limit. Only official vacation weeks can be full-time: agree term-time hours of ${H} or fewer, or check the dates` });
-    } else if (o.hours != null) out.push({ tone: "good", text: `${o.hours} h/week is within your ${H} h/week term-time limit` });
+        : { tone: "bad", text: `${both} is over your ${H} h/week term-time limit. Only official vacation weeks can be full-time: agree term-time hours of ${H} or fewer, or check the dates` });
+    } else if (o.hours != null) out.push({ tone: "good", text: `${both} is within your ${H} h/week term-time limit` });
     else out.push({ tone: "warn", text: `Hours not saved yet: in term time you can work up to ${H} h/week` });
     const exp = [det.visaExpiry, P.visa.expiry].find((x) => /^\d{4}-\d{2}-\d{2}$/.test(x ?? ""));
     if (exp && o.end && o.end > exp) out.push({ tone: "bad", text: `It ends after your visa expires (${fmtDay(exp)}): you can't work past that date` });
@@ -108,7 +110,7 @@ export const finishItems: Item[] = [
 
 /** Reminders for the agent's schedule: reply-by date, start date, first day, weekly hours, end of the role. */
 export async function opportunityReminders(enqueue: (type: string, payload: Record<string, unknown>, opts: { dedupeKey: string }) => Promise<unknown>, emit: (e: any) => Promise<unknown>) {
-  const rows = (await pool.query(`select a.id, a.notes, j.title, j.employer from applications a join jobs j on j.id = a.job_id where a.notes like '%"opportunity"%'`)).rows;
+  const rows = (await pool.query(`select a.id, a.notes, j.title, j.employer, j.category, j.country from applications a join jobs j on j.id = a.job_id where a.notes like '%"opportunity"%' and a.status not in ('withdrawn', 'rejected')`)).rows;
   if (!rows.length) return;
   await ensureLog();
   const P = persona();
@@ -124,18 +126,19 @@ export async function opportunityReminders(enqueue: (type: string, payload: Reco
     if (o.state === "considering" && respond != null && (respond === 2 || respond === 0) && hour >= 9)
       await once(`opp:${r.id}:respond:${respond}`, { type: "deadline_approaching", level: "warning", importance: "urgent", title: respond === 0 ? `⏰ Reply to ${r.employer}'s offer today` : `⏰ ${r.employer}'s offer: reply in 2 days`, body: `${r.title}\n👉 Tap to check it against your visa and reply.`, applicationId: r.id, url });
     if (o.state === "accepted" && start != null && (start === 7 || start === 1) && hour >= 9) {
-      const left = prepItems(r.id, { category: null, country: null }, o).filter((i) => !(o.checklist ?? []).includes(i.id)).length;
+      const othersN = (await pool.query(`select count(*)::int n from applications where id <> $1 and status in ('submitted','assessment','interview','offer')`, [r.id])).rows[0].n;
+      const left = prepItems(r.id, r, o).filter((i) => (i.id !== "others" || othersN > 0) && !(o.checklist ?? []).includes(i.id)).length;
       await once(`opp:${r.id}:start:${start}`, { type: "deadline_approaching", level: "info", importance: "important", title: start === 1 ? `🚀 You start at ${r.employer} tomorrow` : `🚀 One week until you start at ${r.employer}`, body: `${r.title}${left ? `\n👉 ${left} thing${left > 1 ? "s" : ""} left on your getting-ready list.` : "\n👉 You're all set. Plan your route tonight."}`, applicationId: r.id, url });
     }
-    if (o.state === "accepted" && start != null && start <= 0) {
+    if (o.state === "accepted" && start != null && (start < 0 || (start === 0 && hour >= 7))) {
       await setOpp(r.id, { state: "started" });
-      await once(`opp:${r.id}:day1`, { type: "employer_response", level: "success", importance: "important", title: `💼 First day at ${r.employer}. Good luck!`, body: "👉 Tap for your day-one notes. Log your hours and a line in your journal each week.", applicationId: r.id, url });
+      if (start === 0) await once(`opp:${r.id}:day1`, { type: "employer_response", level: "success", importance: "important", title: `💼 First day at ${r.employer}. Good luck!`, body: "👉 Tap for your day-one notes. Log your hours and a line in your journal each week.", applicationId: r.id, url });
     }
     if (o.state === "started" && weekday === "Sun" && hour >= 18) {
       const has = (await pool.query(`select 1 from opportunity_log where application_id = $1 and kind = 'hours' and day = $2`, [r.id, mondayOf(today)])).rowCount;
       if (!has) await once(`opp:${r.id}:hours:${mondayOf(today)}`, { type: "info_needed", level: "info", importance: "important", title: `🕒 Log this week's hours at ${r.employer}`, body: isUkStudent() ? `👉 Keeps you within your ${P.visa.termHours} h/week term-time limit, and a line for your journal.` : "👉 And a line for your journal: it becomes your CV later.", applicationId: r.id, url: `${url}#hours` });
     }
-    if (o.state === "started" && end != null && end < 0) {
+    if (o.state === "started" && end != null && end < 0 && hour >= 9) {
       await setOpp(r.id, { state: "finished" });
       await once(`opp:${r.id}:finished`, { type: "employer_response", level: "success", importance: "important", title: `🏁 Your role at ${r.employer} has ended`, body: "👉 Ask for a reference, add it to LinkedIn and your CV while it's fresh.", applicationId: r.id, url: `${url}#finish` });
     }

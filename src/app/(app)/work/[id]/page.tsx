@@ -28,12 +28,17 @@ export default async function WorkItem({ params, searchParams }: { params: Promi
   const o = oppOf(a.notes);
   const det = (await getDetails()) as Record<string, any>;
   const P = persona();
-  const [logs, offerMail, others] = await Promise.all([
+  const [logs, offerMail, others, otherOpps, weekRows] = await Promise.all([
     pool.query(`select id, kind, day::text, hours, text from opportunity_log where application_id = $1 order by day desc, id desc limit 200`, [id]),
     pool.query(`select id from emails where application_id = $1 and category = 'offer' order by received_at desc limit 1`, [id]),
     pool.query(`select a.id, a.status, j.id as job_id, j.title, j.employer from applications a join jobs j on j.id = a.job_id
                 where a.id <> $1 and a.status in ('submitted','assessment','interview','offer') order by a.updated_at desc`, [id]),
+    pool.query(`select notes from applications where id <> $1 and (status = 'offer' or notes like '%"opportunity"%')`, [id]),
+    pool.query(`select day::text, sum(hours)::float total from opportunity_log where kind = 'hours' group by day`),
   ]);
+  // The term-time limit covers all your jobs together
+  const otherHours = otherOpps.rows.map((x) => oppOf(x.notes)).filter((x) => ["accepted", "started"].includes(x.state)).reduce((s, x) => s + (x.hours ?? 0), 0);
+  const weekTotals = new Map<string, number>(weekRows.rows.map((w) => [w.day, Number(w.total)]));
   const hours = logs.rows.filter((l) => l.kind === "hours");
   const journal = logs.rows.filter((l) => l.kind === "journal");
   const mail = offerMail.rows[0]?.id as string | undefined;
@@ -132,7 +137,7 @@ ${me || "[Your name]"}`;
         <section className="card p-4 space-y-2" id="checks">
           <h2 className="font-bold">Checks</h2>
           <ul className="space-y-1.5 text-sm">
-            {checks(a, o, det).map((c, i) => (
+            {checks(a, o, det, otherHours).map((c, i) => (
               <li key={i} className="flex gap-2"><span style={{ color: TONE[c.tone] }}>{c.tone === "good" ? "✓" : c.tone === "bad" ? "✗" : "!"}</span>
                 <span className="flex-1">{c.text}{c.href && <> <a href={c.href} target="_blank" rel="noopener noreferrer" className="text-accent font-semibold whitespace-nowrap">Check ↗</a></>}</span></li>
             ))}
@@ -200,11 +205,12 @@ ${me || "[Your name]"}`;
           <ul className="divide-y divide-line text-sm">
             {hours.slice(0, 16).map((h) => {
               const vac = inVacation(mondayOf(h.day), det);
-              const over = isUkStudent() && vac !== true && Number(h.hours) > H;
+              const total = weekTotals.get(h.day) ?? Number(h.hours);
+              const over = isUkStudent() && vac !== true && total > H;
               return (
                 <li key={h.id} className="py-1.5 flex items-center gap-2">
                   <span className="flex-1">Week of {fmtDay(h.day)}{isUkStudent() && <span className="text-xs text-muted"> · {vac === true ? "summer vacation" : vac === false ? "outside your summer break" : "term or vacation?"}</span>}</span>
-                  <b className="tabular-nums" style={over ? { color: "var(--bad)" } : undefined}>{Number(h.hours)} h</b>
+                  <b className="tabular-nums" style={over ? { color: "var(--bad)" } : undefined}>{Number(h.hours)} h{total > Number(h.hours) && <span className="text-xs text-muted font-normal"> ({total} h all jobs)</span>}</b>
                   <form action={deleteWorkLog.bind(null, id, String(h.id))}><button className="text-xs text-muted px-1" aria-label="Delete">✕</button></form>
                   {over && <span className="basis-full text-xs" style={{ color: "var(--bad)" }}>Over {H} h: only allowed if this was an official vacation week (e.g. Christmas or Easter). If it was term time, talk to your manager about cutting hours</span>}
                 </li>

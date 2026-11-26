@@ -541,7 +541,8 @@ export async function logWork(appId: string, f: FormData) {
   const { ensureLog, mondayOf } = await import("@/lib/opportunity");
   await ensureLog();
   const kind = str(f, "kind") === "hours" ? "hours" : "journal";
-  const day = isDay(str(f, "day")) ? str(f, "day") : new Date().toISOString().slice(0, 10);
+  const { loadPersona } = await import("@/lib/persona");
+  const day = isDay(str(f, "day")) ? str(f, "day") : new Date().toLocaleDateString("en-CA", { timeZone: (await loadPersona()).timeZone || "Europe/London" });
   if (kind === "hours") {
     const h = Number(str(f, "hours"));
     if (!(h >= 0 && h <= 80)) redirect(`/work/${appId}?error=hours#hours`);
@@ -579,6 +580,7 @@ export async function addOwnJob(f: FormData) {
     `insert into applications (job_id, status, submitted_at, notes) values ($1, 'offer', now(), $2)
      on conflict (job_id) do update set status = 'offer', updated_at = now() returning id`,
     [job.rows[0].id, JSON.stringify({ opportunity: { state: "accepted", start, decidedAt: new Date().toISOString() } })]);
+  { const { setOpp } = await import("@/lib/opportunity"); await setOpp(app.rows[0].id, { state: "accepted", start, decidedAt: new Date().toISOString() }); }
   await audit("own_job_added", {}, u.id);
   revalidatePath("/work"); revalidatePath("/");
   redirect(`/work/${app.rows[0].id}`);
