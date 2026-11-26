@@ -118,7 +118,7 @@ export const finishItems: Item[] = [
   { id: "ref", title: "Ask your manager for a reference", why: "Ask before you leave, while your work is fresh in their mind." },
   { id: "linkedin", title: "Ask for a LinkedIn recommendation and add the role to LinkedIn", why: "Recruiters see it, and it backs up your CV.", href: "https://www.linkedin.com/in/me/edit/forms/position/new/" },
   { id: "return", title: "Ask about a return offer or graduate scheme", why: "Many firms hire their interns and placement students first." },
-  { id: "cv", title: "Add the role to your CV using your journal", why: "Specific results you wrote down beat vague bullet points.", href: "#cv" },
+  { id: "cv", title: "Add the role to your CV using your journal", why: "Specific results you wrote down beat vague bullet points. Add it in My CV.", href: "/cv" },
   { id: "thanks", title: "Send a short thank-you to your manager and team", why: "Keeps the door open for later." },
 ];
 

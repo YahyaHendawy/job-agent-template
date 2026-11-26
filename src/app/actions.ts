@@ -632,3 +632,53 @@ export async function addOwnJob(f: FormData) {
   revalidatePath("/work"); revalidatePath("/");
   redirect(`/work/${app.rows[0].id}`);
 }
+
+/* ---------------- My CV ---------------- */
+/** Upload (or replace) your Word CV; it becomes the template every export uses. */
+export async function uploadCvSource(f: FormData) {
+  await requireUser();
+  const file = f.get("cv");
+  if (!(file instanceof File) || !/\.docx$/i.test(file.name) || file.size > 4_400_000) redirect("/cv?error=file");
+  const data = Buffer.from(await (file as File).arrayBuffer());
+  const { ensureCvTables, outline } = await import("@/lib/cvdoc");
+  try { if (!outline(data).length) throw new Error("no sections"); } catch { redirect("/cv?error=read"); }
+  await ensureCvTables();
+  await pool.query(`insert into cv_source (id, filename, data, uploaded_at) values (1, $1, $2, now()) on conflict (id) do update set filename = excluded.filename, data = excluded.data, uploaded_at = now()`,
+    [(file as File).name.slice(0, 120), data]);
+  revalidatePath("/cv");
+  redirect("/cv?uploaded=1");
+}
+
+/** Add an entry (job, activity) or a line (skill, project…) to a section of your CV. */
+export async function addCvItem(f: FormData) {
+  await requireUser();
+  const { ensureCvTables, syncProfile } = await import("@/lib/cvdoc");
+  await ensureCvTables();
+  const [section, sublist] = str(f, "where").split("›").map((s) => s.trim());
+  const kind = str(f, "kind") === "entry" ? "entry" : "line";
+  const cut = (k: string, n = 200) => str(f, k).slice(0, n) || null;
+  const bullets = str(f, "bullets").split("\n").map((b) => b.replace(/^[•\-*\s]+/, "").trim()).filter(Boolean).slice(0, 8).map((b) => b.slice(0, 300));
+  if (!section || (kind === "entry" ? !str(f, "org") && !str(f, "role") : !str(f, "text"))) redirect("/cv?error=empty#add");
+  const r = await pool.query(`insert into cv_additions (section, kind, sublist, org, location, role, dates, bullets, label, text) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    returning id::text, section, kind, sublist, org, location, role, dates, bullets, label, text, include, created_at`,
+    [section.slice(0, 80), kind, sublist?.slice(0, 60) || null, cut("org"), cut("location", 80), cut("role"), cut("dates", 60), JSON.stringify(bullets), cut("label", 60), cut("text", 400)]);
+  await syncProfile(r.rows[0], "add");
+  revalidatePath("/cv");
+  redirect("/cv?added=1#added");
+}
+
+export async function deleteCvItem(id: string) {
+  await requireUser();
+  const { syncProfile } = await import("@/lib/cvdoc");
+  const r = await pool.query(`delete from cv_additions where id = $1 returning id::text, section, kind, sublist, org, location, role, dates, bullets, label, text, include, created_at`, [id]);
+  if (r.rows[0]) await syncProfile(r.rows[0], "remove");
+  revalidatePath("/cv");
+}
+
+export async function toggleCvItem(id: string) {
+  await requireUser();
+  const { syncProfile } = await import("@/lib/cvdoc");
+  const r = await pool.query(`update cv_additions set include = not include where id = $1 returning id::text, section, kind, sublist, org, location, role, dates, bullets, label, text, include, created_at`, [id]);
+  if (r.rows[0]) await syncProfile(r.rows[0], r.rows[0].include ? "add" : "remove");
+  revalidatePath("/cv");
+}

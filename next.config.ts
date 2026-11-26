@@ -17,7 +17,7 @@ const securityHeaders = [
 const config: NextConfig = {
   serverExternalPackages: ["pg", "web-push"],
   // CV upload in onboarding (Vercel allows 4.5 MB request bodies)
-  experimental: { serverActions: { bodySizeLimit: "4mb" } },
+  experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

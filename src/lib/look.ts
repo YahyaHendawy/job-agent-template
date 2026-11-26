@@ -17,7 +17,7 @@ export type Appearance = {
 
 export const ALL_TABS: { href: string; label: string }[] = [
   { href: "/", label: "Home" }, { href: "/jobs", label: "Jobs" }, { href: "/map", label: "Map" }, { href: "/applications", label: "Applications" },
-  { href: "/todo", label: "Solo" }, { href: "/emails", label: "Emails" }, { href: "/work", label: "My job" }, { href: "/manager", label: "Manager" }, { href: "/analytics", label: "Analytics" }, { href: "/activity", label: "Activity" },
+  { href: "/todo", label: "Solo" }, { href: "/emails", label: "Emails" }, { href: "/cv", label: "My CV" }, { href: "/work", label: "My job" }, { href: "/manager", label: "Manager" }, { href: "/analytics", label: "Analytics" }, { href: "/activity", label: "Activity" },
   { href: "/compare", label: "Compare" }, { href: "/settings", label: "Settings" },
 ];
 

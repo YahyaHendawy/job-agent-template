@@ -9,6 +9,7 @@ const TABS = [
   { href: "/applications", label: "Applications", short: "Apps", d: "M7 3h7l5 5v12a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm6 1.5V9h4.5M8 13h8M8 17h6" },
   { href: "/todo", label: "Solo", d: "M9 4h6v3H9zM8 5.5H5.5V21h13V5.5H16M8.5 14l2.5 2.5 4.5-5" },
   { href: "/emails", label: "Emails", d: "M4 6h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zm0 1 8 6 8-6" },
+  { href: "/cv", label: "My CV", desktopOnly: true, d: "M7 3h7l5 5v12a1 1 0 0 1-1 1H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 9h6m-6 4h6m-6-8h2" },
   { href: "/work", label: "My job", desktopOnly: true, d: "M9 6V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1h4a2 2 0 0 1 2 2v4H3V8a2 2 0 0 1 2-2zm-6 8h18v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zm8-1v2h2v-2" },
   { href: "/analytics", label: "Analytics", desktopOnly: true, d: "M12 3v9h9A9 9 0 1 1 12 3zm3 0a6 6 0 0 1 6 6h-6z" },
   { href: "/manager", label: "Manager", desktopOnly: true, d: "M12 3 4 7v5c0 4.5 3.4 8.4 8 9 4.6-.6 8-4.5 8-9V7zm-3 9 2 2 4-4" },

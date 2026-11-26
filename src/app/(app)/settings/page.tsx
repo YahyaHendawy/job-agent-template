@@ -62,6 +62,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <div className="space-y-4">
       <PageHeader title="Settings" subtitle={`Signed in as ${me.email}`} right={<form action="/api/logout" method="post"><button className="btn btn-ghost !text-sm">Sign out</button></form>} />
       <SettingsSearch />
+      <a href="/cv" data-settings-item className="card p-4 flex items-center gap-3">
+        <span className="text-xl">📄</span>
+        <span className="flex-1"><b>My CV</b><br /><span className="text-sm text-muted">Add experience, projects and skills; download your CV in your own Word format</span></span>
+        <span className="text-accent font-semibold">→</span>
+      </a>
       <a href="/settings/appearance" data-settings-item className="card p-4 flex items-center gap-3 gradient-hero">
         <span className="text-xl">🎨</span>
         <span className="flex-1"><b>Appearance</b><br /><span className="text-sm text-muted">Theme, colours, light mode, font, text size, effects, motion, bottom-bar tabs, what Home shows</span></span>
